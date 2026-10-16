@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e12">
+<title>Jetronic Reader</title>
+<style>
+  :root {
+    --bg: #0b0e12;
+    --card: #161b22;
+    --line: #2a3340;
+    --text: #f2f5f8;
+    --muted: #9aa6b2;
+    --accent: #3dd68c;
+    --warn: #f0b429;
+    --bad: #ff5d5d;
+    --btn: #1f6feb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 28px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: 1.15rem;
+    font-weight: 650;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+  #status {
+    font-size: 0.95rem;
+    color: var(--muted);
+    text-align: right;
+  }
+  #status.ok { color: var(--accent); }
+  #status.bad { color: var(--bad); }
+  button#connect {
+    width: 100%;
+    min-height: 72px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--btn);
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin-bottom: 14px;
+  }
+  button#connect:active { filter: brightness(1.15); }
+  button#connect:disabled { opacity: 0.55; }
+  #banner {
+    display: none;
+    background: #3a2414;
+    color: #ffd7a8;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+  #err {
+    display: none;
+    background: #3a1616;
+    color: #ffc9c9;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 1rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 14px 10px;
+    min-height: 108px;
+  }
+  .tile.wide { grid-column: 1 / -1; }
+  .label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .value {
+    font-size: 2.6rem;
+    font-weight: 720;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+    margin-top: 4px;
+  }
+  .unit { font-size: 1.1rem; font-weight: 600; color: var(--muted); margin-left: 4px; }
+  .meta {
+    margin-top: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    color: var(--muted);
+    font-size: 1rem;
+  }
+  .meta b { color: var(--text); font-weight: 650; }
+  .flags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .flag {
+    border-radius: 999px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-size: 0.85rem;
+  }
+  .flag.on.stalled { background: var(--bad); color: #1a0505; border-color: var(--bad); }
+  .flag.on.snapped { background: var(--warn); color: #1a1200; border-color: var(--warn); }
+  #info { margin-top: 8px; font-size: 0.85rem; color: var(--muted); word-break: break-all; }
+  @media (min-width: 720px) {
+    body { max-width: 820px; margin: 0 auto; }
+    .value { font-size: 3.2rem; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Jetronic Reader</h1>
+  <div id="status">Neconectat</div>
+</header>
+<div id="banner"></div>
+<div id="err"></div>
+<button id="connect" type="button">Conectează</button>
+<div class="grid">
+  <div class="tile">
+    <div class="label">Duty</div>
+    <div class="value"><span id="duty">—</span><span class="unit">%</span></div>
+  </div>
+  <div class="tile">
+    <div class="label">RPM</div>
+    <div class="value" id="rpm">—</div>
+  </div>
+  <div class="tile">
+    <div class="label">Avans</div>
+    <div class="value"><span id="adv">—</span><span class="unit">°</span></div>
+  </div>
+  <div class="tile">
+    <div class="label">Vbat</div>
+    <div class="value"><span id="vbat">—</span><span class="unit">V</span></div>
+  </div>
+</div>
+<div class="meta">
+  <div>Vdd <b id="vdd">—</b> V</div>
+  <div>Seq <b id="seq">—</b></div>
+  <div class="flags">
+    <span class="flag stalled" id="f-stalled">STALLED</span>
+    <span class="flag snapped" id="f-snapped">SNAPPED</span>
+  </div>
+  <div>Ultima actualizare <b id="updated">—</b></div>
+  <div id="info" style="grid-column: 1 / -1;"></div>
+</div>
+<script>
+(function () {
+  var SERVICE = "6a7e1000-7e70-4a11-9e01-726577697265";
+  var TELEMETRY = "6a7e1001-7e70-4a11-9e01-726577697265";
+  var INFO = "6a7e1002-7e70-4a11-9e01-726577697265";
+  var MARKER = "jetronic-reader-viewer-rw";
+
+  var statusEl = document.getElementById("status");
+  var banner = document.getElementById("banner");
+  var errEl = document.getElementById("err");
+  var btn = document.getElementById("connect");
+  var device = null;
+  var charTelem = null;
+
+  document.documentElement.setAttribute("data-page", MARKER);
+
+  function setStatus(text, kind) {
+    statusEl.textContent = text;
+    statusEl.className = kind || "";
+  }
+
+  function showErr(text) {
+    if (!text) {
+      errEl.style.display = "none";
+      errEl.textContent = "";
+      return;
+    }
+    errEl.style.display = "block";
+    errEl.textContent = text;
+  }
+
+  function fmt(n, digits) {
+    if (!Number.isFinite(n)) return "—";
+    return n.toFixed(digits);
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  function clock(d) {
+    return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  function onPacket(value) {
+    var len = value ? value.byteLength : 0;
+    if (len !== 34) {
+      showErr("Pachet invalid (" + len + " B, așteptat 34)");
+      return;
+    }
+    showErr("");
+    var copy = new Uint8Array(34);
+    copy.set(new Uint8Array(value.buffer, value.byteOffset || 0, 34));
+    var v = new DataView(copy.buffer);
+    var dutyHigh = v.getFloat32(0, true);
+    var rpm = v.getFloat32(12, true);
+    var advDeg = v.getFloat32(16, true);
+    var vbat = v.getFloat32(24, true);
+    var vdd = v.getFloat32(28, true);
+    var flags = v.getUint8(32);
+    var seq = v.getUint8(33);
+    document.getElementById("duty").textContent = fmt(dutyHigh, 1);
+    document.getElementById("rpm").textContent = fmt(rpm, 0);
+    document.getElementById("adv").textContent = fmt(advDeg, 1);
+    document.getElementById("vbat").textContent = fmt(vbat, 2);
+    document.getElementById("vdd").textContent = fmt(vdd, 2);
+    document.getElementById("seq").textContent = String(seq);
+    document.getElementById("updated").textContent = clock(new Date());
+    var stalled = document.getElementById("f-stalled");
+    var snapped = document.getElementById("f-snapped");
+    stalled.classList.toggle("on", (flags & 1) !== 0);
+    snapped.classList.toggle("on", (flags & 2) !== 0);
+  }
+
+  function disconnectUi() {
+    charTelem = null;
+    device = null;
+    setStatus("Deconectat", "bad");
+    btn.disabled = false;
+    btn.textContent = "Conectează";
+  }
+
+  async function connect() {
+    showErr("");
+    if (!navigator.bluetooth) {
+      banner.style.display = "block";
+      banner.textContent = "Web Bluetooth lipsește. Deschide pagina în Chrome pe Android (nu Firefox și nu browserul din aplicație).";
+      btn.disabled = true;
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Se conectează…";
+    setStatus("Se caută…", "");
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: "Jetronic" },
+          { namePrefix: "JETRONIC" },
+          { namePrefix: "jetronic" }
+        ],
+        optionalServices: [SERVICE]
+      });
+      device.addEventListener("gattserverdisconnected", disconnectUi);
+      setStatus("Conectare…", "");
+      var server = await device.gatt.connect();
+      var service = await server.getPrimaryService(SERVICE);
+      charTelem = await service.getCharacteristic(TELEMETRY);
+      await charTelem.startNotifications();
+      charTelem.addEventListener("characteristicvaluechanged", function (ev) {
+        onPacket(ev.target.value);
+      });
+      try {
+        var initial = await charTelem.readValue();
+        onPacket(initial);
+      } catch (e) { /* notify-only is fine */ }
+      try {
+        var info = await service.getCharacteristic(INFO);
+        var infoVal = await info.readValue();
+        var bytes = new Uint8Array(infoVal.buffer, infoVal.byteOffset, infoVal.byteLength);
+        var text = "";
+        var printable = true;
+        for (var i = 0; i < bytes.length; i++) {
+          var c = bytes[i];
+          if (c === 0) break;
+          if (c < 32 || c > 126) { printable = false; break; }
+          text += String.fromCharCode(c);
+        }
+        document.getElementById("info").textContent = printable && text
+          ? text
+          : (bytes.length ? "info " + bytes.length + " B" : "");
+      } catch (e) {
+        document.getElementById("info").textContent = "";
+      }
+      setStatus("Conectat" + (device.name ? " · " + device.name : ""), "ok");
+      btn.textContent = "Conectat";
+    } catch (e) {
+      if (e && e.name === "NotFoundError") {
+        setStatus("Anulat", "");
+      } else {
+        setStatus("Eroare", "bad");
+        showErr(e && e.message ? e.message : "Conectare eșuată");
+      }
+      btn.disabled = false;
+      btn.textContent = "Conectează";
+      if (device && device.gatt && device.gatt.connected) {
+        try { device.gatt.disconnect(); } catch (ignore) {}
+      }
+    }
+  }
+
+  btn.addEventListener("click", function () {
+    if (device && device.gatt && device.gatt.connected) return;
+    connect();
+  });
+
+  if (!navigator.bluetooth) {
+    banner.style.display = "block";
+    banner.textContent = "Web Bluetooth lipsește. Deschide pagina în Chrome pe Android (nu Firefox și nu browserul din aplicație).";
+  }
+})();
+</script>
+</body>
+</html>
