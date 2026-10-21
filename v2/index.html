@@ -269,7 +269,7 @@ body.off .s-read .v{opacity:.5}
 <!-- ===== Dark ===== -->
 <section class="view v-dark">
   <div class="glass d-hero">
-    <div class="d-label">Duty <span class="tag">DutyH · DuCy</span></div>
+    <div class="d-label">Duty (neg) <span class="tag">DutyL · timp LOW · H <span data-f="dutyh">—</span> %</span></div>
     <div class="row"><div class="value num"><span data-f="duty">—</span><span class="d-unit">%</span></div><div class="spark" data-spark="duty"></div></div>
     <div class="d-bar"><b id="d-bar"></b></div>
     <div class="d-scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
@@ -293,12 +293,12 @@ body.off .s-read .v{opacity:.5}
 <!-- ===== Scope ===== -->
 <section class="view v-scope">
   <div class="s-scope">
-    <div class="s-hd"><span>CH1 DUTY 10%/div</span><span class="s-ch2">CH2 RPM 500/div</span><span style="color:#ffcf66">1 s/div</span></div>
+    <div class="s-hd"><span>CH1 DUTY(neg) 10%/div</span><span class="s-ch2">CH2 RPM 500/div</span><span style="color:#ffcf66">1 s/div</span></div>
     <div class="s-plot" id="s-plot"></div>
     <div class="s-ft"><span>-10 s</span><span>-5 s</span><span>acum</span></div>
   </div>
   <div class="s-read">
-    <div class="c"><div class="k">DUTY <i>CH1</i></div><div class="v num"><span data-f="duty">—</span><u>%</u></div></div>
+    <div class="c"><div class="k">DUTY NEG <i>H <span data-f="dutyh">—</span></i></div><div class="v num"><span data-f="duty">—</span><u>%</u></div></div>
     <div class="c rpm"><div class="k">RPM <i>CH2</i></div><div class="v num" data-f="rpm">—</div></div>
     <div class="c"><div class="k">AVANS</div><div class="v num"><span data-f="adv">—</span><u>°</u></div></div>
     <div class="c"><div class="k">VBAT</div><div class="v num"><span data-f="vbat">—</span><u>V</u></div></div>
@@ -408,7 +408,7 @@ body.off .s-read .v{opacity:.5}
   /* ---------------- lamps ("martori") ---------------- */
   // ECU fault codes, shown by the KE-Jetronic ECU as DuCy duty (SNAPPED to a 10 % step).
   var CODES = [
-    { c: 0,   tag: "COM",  amber: false, txt: "Eroare comunicare cu ECU / amestec prea bogat" },
+    { c: 0,   tag: "COM",  amber: false, txt: "Eroare comunicare cu ECU / amestec prea bogat (L 0 %: semnal DuCy blocat pe HIGH)" },
     { c: 10,  tag: "TPS1", amber: false, txt: "Senzor poziție clapetă 1 – eroare" },
     { c: 20,  tag: "TPS2", amber: false, txt: "Senzor poziție clapetă 2 – eroare" },
     { c: 30,  tag: "CLT",  amber: false, txt: "Senzor temperatură lichid răcire – eroare" },
@@ -418,7 +418,7 @@ body.off .s-read .v{opacity:.5}
     { c: 70,  tag: "CPS",  amber: true,  txt: "Senzor poziție arbore cotit – eroare. Apare normal cu motorul oprit și contactul pus" },
     { c: 80,  tag: "IAT",  amber: false, txt: "Senzor temperatură aer admisie – eroare" },
     { c: 95,  tag: "µSW",  amber: false, txt: "Microîntrerupător: timonerie clapetă" },
-    { c: 100, tag: "OVP",  amber: false, txt: "Eroare comunicare cu ECU / siguranță OVP arsă / amestec prea sărac. Apare și cu contactul oprit" }
+    { c: 100, tag: "OVP",  amber: false, txt: "Eroare comunicare cu ECU / siguranță OVP arsă / amestec prea sărac. Apare și cu contactul oprit sau fir DuCy deconectat (L 100 %: semnal blocat pe LOW)" }
   ];
   var CODE_BY = {}; CODES.forEach(function (k) { CODE_BY[k.c] = k; k.id = "E" + (k.c < 10 ? "0" : "") + k.c; k.seen = 0; k.first = 0; });
   var SYS = [
@@ -437,7 +437,7 @@ body.off .s-read .v{opacity:.5}
     CODES.forEach(function (k) {
       h += '<button type="button" class="lp off" data-l="' + k.id + '" title="' + esc(k.id + " – " + k.txt) + '"><span class="bulb">' + k.id + '</span><span class="tag">' + k.tag + "</span></button>";
     });
-    h += '<button type="button" class="lp off" data-l="SNAP" title="SNAPPED (bit1): duty fixat pe treaptă de 10 %"><span class="bulb">' + svgIcon(SNAP_LAMP.icon) + '</span><span class="tag">SNAP</span></button>';
+    h += '<button type="button" class="lp off" data-l="SNAP" title="SNAPPED (bit1): duty neg (L) fixat pe treaptă de 10 %"><span class="bulb">' + svgIcon(SNAP_LAMP.icon) + '</span><span class="tag">SNAP</span></button>';
     document.getElementById("codes").innerHTML = h;
     h = "";
     SYS.forEach(function (s) {
@@ -461,23 +461,29 @@ body.off .s-read .v{opacity:.5}
   var e95Since = 0, e95Min = 0, e95Max = 0;
   var prev = { stall: false, vbat: false, adv: false, snap: false };
 
+  // Codes are decoded from the LOW-time duty (negative duty), L = 100 − H.
   function decodeCode(p, t) {
-    var d = p.duty;
+    var d = p.duty;                       // duty_low_pct
     if (p.flags & FLAG_STALLED) {
-      // DuCy held constant: firmware reports 0 % or 100 % (pin level), never SNAPPED
+      // DuCy held constant (no edge for 3 s): firmware reports the pin level (v0.3 behaviour)
+      //   pin HIGH -> H 100 / L 0   -> E00
+      //   pin LOW  -> H 0   / L 100 -> E100 (also ignition off; a disconnected input reads LOW via the divider to GND)
+      //   no valid cycle since boot -> H 0 / L 0 -> no signal, not a code
       e95Since = 0;
+      if (p.dutyH + d < 50) return null;
       if (d >= 99.5) return 100;
       if (d <= 0.5) return 0;
       return null;
     }
     if (p.flags & FLAG_SNAPPED) {
+      // firmware snaps DutyH to a 10 % step and sets L = 100 − H, so L is on the same steps
       e95Since = 0;
       var n = Math.round(d / 10) * 10;
       if (Math.abs(d - n) <= 2.5) return n;
       return null;
     }
-    // Firmware cannot snap 95 % (rounds to 100, outside ±2 %): detect it here,
-    // stable within 95 ± 2.5 % (spread ≤ 1 %) for 3 s.
+    // E95 = L 95 % (H 5 %): firmware never snaps it (5 % rounds to 10 %, outside its ±2 %),
+    // so detect it here: L within 95 ± 2.5 %, spread ≤ 1 %, for 3 s.
     if (Math.abs(d - 95) <= 2.5) {
       if (!e95Since || d < e95Min - 1e-9 && e95Max - d > 1 || d > e95Max + 1e-9 && d - e95Min > 1) { e95Since = t; e95Min = e95Max = d; }
       e95Min = Math.min(e95Min, d); e95Max = Math.max(e95Max, d);
@@ -500,7 +506,8 @@ body.off .s-read .v{opacity:.5}
     copy.set(new Uint8Array(value.buffer, value.byteOffset || 0, 34));
     var v = new DataView(copy.buffer);
     var p = {
-      duty: v.getFloat32(0, true), dutyLow: v.getFloat32(4, true), dutyNeg: v.getFloat32(8, true),
+      // Jetronic DuCy is read in NEGATIVE duty: the LOW-time % (duty_low_pct, offset 4) is the primary value
+      dutyH: v.getFloat32(0, true), duty: v.getFloat32(4, true), dutyNeg: v.getFloat32(8, true),
       rpm: v.getFloat32(12, true), adv: v.getFloat32(16, true), advUs: v.getInt32(20, true),
       vbat: v.getFloat32(24, true), vdd: v.getFloat32(28, true), flags: v.getUint8(32), seq: v.getUint8(33), t: t
     };
@@ -518,14 +525,14 @@ body.off .s-read .v{opacity:.5}
     if (code !== null) {
       var k = CODE_BY[code];
       if (k) {
-        if (!k.seen || t - k.seen > LATCH_MS) { k.first = t; log(k.amber ? "w" : "e", k.id + " · " + k.txt.split(".")[0]); }
+        if (!k.seen || t - k.seen > LATCH_MS) { k.first = t; log(k.amber ? "w" : "e", k.id + " (L " + k.c + " %) · " + k.txt.split(".")[0].split(" (")[0]); }
         k.seen = t;
-      } else if (!prev.unk || t - prev.unk > LATCH_MS) { prev.unk = t; log("w", "Duty fixat la " + code + " % – nu e cod cunoscut"); }
+      } else if (!prev.unk || t - prev.unk > LATCH_MS) { prev.unk = t; log("w", "Duty neg fixat la L " + code + " % – nu e cod cunoscut"); }
     }
     advInvalidN = (!(p.flags & FLAG_ADV_VALID) && p.rpm > 0) ? advInvalidN + 1 : 0;
 
     var stall = !!(p.flags & FLAG_STALLED);
-    if (stall !== prev.stall) { log(stall ? "e" : "g", stall ? "STALLED · fără semnal DuCy" : "DuCy revenit"); prev.stall = stall; }
+    if (stall !== prev.stall) { log(stall ? "e" : "g", stall ? "STALLED · DuCy " + (p.dutyH + p.duty < 50 ? "fără semnal" : p.duty <= 0.5 ? "blocat HIGH (L 0 %)" : p.duty >= 99.5 ? "blocat LOW (L 100 %)" : "blocat") : "DuCy revenit"); prev.stall = stall; }
     var vb = p.vbat < VBAT_LO || p.vbat > VBAT_HI;
     if (vb && !prev.vbat) log("w", "Vbat " + fmt(p.vbat, 2) + " V în afara " + VBAT_LO + "–" + VBAT_HI + " V");
     prev.vbat = vb;
@@ -533,7 +540,9 @@ body.off .s-read .v{opacity:.5}
     if (av && !prev.adv) log("w", "AVANS invalid · fără impuls IGN (RPM > 0)");
     prev.adv = av;
 
-    setField("duty", fmt(p.duty, 1));
+    p.noSig = (p.flags & FLAG_STALLED) && p.dutyH + p.duty < 50;   // stalled before any valid DuCy cycle: firmware sends H = L = 0
+    setField("duty", p.noSig ? "—" : fmt(p.duty, 1));
+    setField("dutyh", p.noSig ? "—" : fmt(p.dutyH, 1));
     setField("rpm", fmt(p.rpm, 0));
     setField("adv", fmt(p.adv, 1));
     setField("vbat", fmt(p.vbat, 2));
@@ -578,9 +587,13 @@ body.off .s-read .v{opacity:.5}
       return "Pachete OK · 34 B, ~10 Hz";
     },
     VBAT: function () { return last ? "Vbat " + fmt(last.vbat, 2) + " V (normal " + VBAT_LO + "–" + VBAT_HI + " V)" : "Vbat: fără date"; },
-    STALL: function () { return last && (last.flags & FLAG_STALLED) ? "STALLED (bit0): fără fronturi DuCy de 3 s – semnal blocat pe " + fmt(last.duty, 0) + " %" : "STALLED (bit0): semnal DuCy prezent"; },
+    STALL: function () {
+      if (!last || !(last.flags & FLAG_STALLED)) return "STALLED (bit0): semnal DuCy prezent";
+      if (last.noSig) return "STALLED (bit0): niciun ciclu DuCy valid de la pornire (H = L = 0) – verifică firul";
+      return "STALLED (bit0): fără fronturi DuCy de 3 s – blocat pe " + (last.duty <= 0.5 ? "HIGH (L 0 % → E00)" : last.duty >= 99.5 ? "LOW (L 100 % → E100; contact oprit / fir deconectat)" : "L " + fmt(last.duty, 0) + " %");
+    },
     AVANS: function () { return advInvalidN >= 3 ? "Avans invalid (bit2 = 0) cu motorul pornit: lipsesc impulsurile IGN" : "Avans: valid sau motor oprit"; },
-    SNAP: function () { return last && (last.flags & FLAG_SNAPPED) ? "SNAPPED (bit1): duty stabil 3 s, fixat la " + fmt(last.duty, 0) + " % – ECU afișează un cod" : "SNAPPED (bit1): inactiv"; }
+    SNAP: function () { return last && (last.flags & FLAG_SNAPPED) ? "SNAPPED (bit1): duty stabil 3 s, fixat la L " + fmt(last.duty, 0) + " % (H " + fmt(last.dutyH, 0) + " %) – ECU afișează un cod" : "SNAPPED (bit1): inactiv"; }
   };
   function renderLamps() {
     var t = nowMs(), st = lampStates(t), active = 0, newest = null;
@@ -595,13 +608,13 @@ body.off .s-read .v{opacity:.5}
     if (!id && newest) id = newest.id;
     var k = null; CODES.forEach(function (c) { if (c.id === id) k = c; });
     if (k) {
-      d = "<b>" + k.id + "</b> (" + (k.c === 0 ? "0" : k.c) + " %) · " + esc(k.txt);
+      d = "<b>" + k.id + "</b> (duty neg L " + k.c + " %) · " + esc(k.txt);
       if (k.c === 70 && last && last.rpm === 0) d += " · <i>RPM 0 acum</i>";
       d += k.seen ? ' · <span class="when">văzut ' + ago(t, k.seen) + " (" + clock(new Date(k.seen)) + ")</span>" : ' · <span class="when">nevăzut</span>';
     } else if (id && SYS_TXT[id]) {
       d = "<b>" + id + "</b> · " + esc(SYS_TXT[id](t));
     } else {
-      d = last ? "Niciun cod de eroare. Codurile apar intermitent: un martor rămâne aprins 10 s după ultima apariție. Atinge un martor pentru detalii." : "Atinge un martor pentru detalii. Codurile ECU apar când duty-ul DuCy e fixat (SNAPPED) pe o treaptă.";
+      d = last ? "Niciun cod de eroare. Codurile apar intermitent: un martor rămâne aprins 10 s după ultima apariție. Atinge un martor pentru detalii." : "Atinge un martor pentru detalii. Codurile ECU = duty negativ (timp LOW %) fixat (SNAPPED) pe o treaptă.";
     }
     document.getElementById("detail").innerHTML = d;
   }
@@ -683,7 +696,7 @@ body.off .s-read .v{opacity:.5}
     return g;
   }
   var gRpm = makeGauge(document.getElementById("g-rpm"), { key: "r", size: 270, bezel: 11, min: 0, max: 7000, major: 1000, minor: 250, redFrom: 6000, a0: -225, a1: 45, tY: -0.32, title: "1/min × 1000", sub: "RPM", lab: function (v) { return v / 1000; }, blank: "----" });
-  var gDuty = makeGauge(document.getElementById("g-duty"), { key: "d", size: 166, bezel: 9, min: 0, max: 100, major: 25, minor: 5, a0: -215, a1: 35, tY: 0.27, title: "DUTY %", blank: "--.-" });
+  var gDuty = makeGauge(document.getElementById("g-duty"), { key: "d", size: 166, bezel: 9, min: 0, max: 100, major: 25, minor: 5, a0: -215, a1: 35, tY: 0.27, title: "DUTY NEG %", blank: "--.-" });
   var gVbat = makeGauge(document.getElementById("g-vbat"), { key: "v", size: 166, bezel: 9, min: 8, max: 16, major: 2, minor: 0.5, a0: -215, a1: 35, tY: 0.27, title: "VBAT · V", amb: [8, VBAT_LO], amb2: [VBAT_HI, 16], blank: "--.--" });
   function renderGauges() {
     if (!last) return;
@@ -836,6 +849,7 @@ body.off .s-read .v{opacity:.5}
     function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
     function n(a) { return (rnd() - 0.5) * 2 * a; }
     var seq = 0, simT = 0;
+    // s.d below is the LOW-time duty (negative duty) that carries the codes.
     // 60 s scenario: idle, throttle blip, E30 snapped, E50 (amber), seq gap, AVANS invalid,
     // engine stop with E70 (amber), 95 % (E95, app-detected), ignition-off 100 % STALLED (E100)
     function sim(t) {
@@ -847,14 +861,14 @@ body.off .s-read .v{opacity:.5}
       else if (c >= 17.5 && c < 22) { d = c < 20.5 ? 49.6 + n(0.2) : 50; rpm = 900 + n(15); if (c >= 20.5) f |= FLAG_SNAPPED; }
       else if (c >= 34 && c < 40) { rpm = 0; adv = 0; d = c < 37 ? 70.3 + n(0.2) : 70; vb = 12.35 + n(0.03); if (c >= 37) f |= FLAG_SNAPPED; }
       else if (c >= 40 && c < 46) { rpm = 0; adv = 0; d = 95.2 + n(0.25); vb = 12.3 + n(0.03); }
-      else if (c >= 46 && c < 50) { rpm = 0; adv = 0; d = 100; vb = 12.3 + n(0.03); f |= FLAG_STALLED; }
+      else if (c >= 46 && c < 50) { rpm = 0; adv = 0; d = 100; vb = 12.3 + n(0.03); f |= FLAG_STALLED; }   // pin LOW: H 0 / L 100 -> E100
       if (rpm > 0 && !(c >= 30 && c < 32)) f |= FLAG_ADV_VALID;
       if (c >= 28 && c < 28.1) skip = true;
       return { d: d, rpm: Math.max(0, rpm), adv: adv, vb: vb, f: f, skip: skip };
     }
     function packet(s) {
       var buf = new ArrayBuffer(34), v = new DataView(buf);
-      v.setFloat32(0, s.d, true); v.setFloat32(4, 100 - s.d, true); v.setFloat32(8, -(100 - s.d), true);
+      v.setFloat32(0, 100 - s.d, true); v.setFloat32(4, s.d, true); v.setFloat32(8, -s.d, true);   // s.d = LOW duty; H = 100 − L
       v.setFloat32(12, s.rpm, true); v.setFloat32(16, s.adv, true);
       v.setInt32(20, s.rpm > 0 ? Math.round(s.adv / 180 * (30e6 / s.rpm)) : 0, true);
       v.setFloat32(24, s.vb, true); v.setFloat32(28, s.vb - 0.7, true);
@@ -885,7 +899,7 @@ body.off .s-read .v{opacity:.5}
   var saved = null; try { saved = localStorage.getItem("jr-theme"); } catch (e) {}
   var urlTheme = params.get("theme");
   setTheme(urlTheme || saved || "dark", false);
-  if (DEMO) startDemo();
+  if (DEMO) { window.__jrFeed = onPacket; window.__jrLamps = function () { return lampStates(nowMs()); }; startDemo(); }
   else if (!navigator.bluetooth) noBluetooth();
   renderLog();
   renderLamps();
