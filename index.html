@@ -226,14 +226,14 @@
     var copy = new Uint8Array(34);
     copy.set(new Uint8Array(value.buffer, value.byteOffset || 0, 34));
     var v = new DataView(copy.buffer);
-    var dutyHigh = v.getFloat32(0, true);
+    var dutyLow = v.getFloat32(4, true); // negative duty (low time)
     var rpm = v.getFloat32(12, true);
     var advDeg = v.getFloat32(16, true);
     var vbat = v.getFloat32(24, true);
     var vdd = v.getFloat32(28, true);
     var flags = v.getUint8(32);
     var seq = v.getUint8(33);
-    document.getElementById("duty").textContent = fmt(dutyHigh, 1);
+    document.getElementById("duty").textContent = fmt(dutyLow, 1);
     document.getElementById("rpm").textContent = fmt(rpm, 0);
     document.getElementById("adv").textContent = fmt(advDeg, 1);
     document.getElementById("vbat").textContent = fmt(vbat, 2);
