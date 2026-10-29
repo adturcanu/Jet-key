@@ -549,14 +549,14 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
 <!-- ===== Dark ===== -->
 <section class="view v-dark">
   <div class="glass d-hero">
-    <div class="d-label">Duty (neg) <span class="tag">DutyL · timp LOW · H <span data-f="dutyh">—</span> %</span></div>
+    <div class="d-label">Duty (neg) <span class="tag" data-f="errst">—</span></div>
     <div class="row"><div class="value num"><span data-f="duty">—</span><span class="d-unit">%</span></div><div class="spark" data-spark="duty"></div></div>
     <div class="d-bar"><b id="d-bar"></b></div>
     <div class="d-scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
   </div>
   <div class="d-tiles">
     <div class="glass d-tile"><div class="d-label">RPM</div><div class="value num" data-f="rpm">—</div><div class="spark" data-spark="rpm"></div></div>
-    <div class="glass d-tile"><div class="d-label">Avans real</div><div class="value num"><span data-f="adv">—</span><span class="d-unit">°</span></div><div class="spark" data-spark="adv"></div></div>
+    <div class="glass d-tile"><div class="d-label">Avans</div><div class="value num"><span data-f="adv">—</span><span class="d-unit">°</span></div><div class="spark" data-spark="adv"></div></div>
     <div class="glass d-tile"><div class="d-label">KL30</div><div class="value num"><span data-f="vbat">—</span><span class="d-unit">V</span></div><div class="spark" data-spark="vbat"></div></div>
   </div>
 </section>
@@ -578,7 +578,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
     <div class="s-ft"><span>-10 s</span><span>-5 s</span><span>acum</span></div>
   </div>
   <div class="s-read">
-    <div class="c"><div class="k">DUTY NEG <i>H <span data-f="dutyh">—</span></i></div><div class="v num"><span data-f="duty">—</span><u>%</u></div></div>
+    <div class="c"><div class="k">DUTY <i data-f="errst">—</i></div><div class="v num"><span data-f="duty">—</span><u>%</u></div></div>
     <div class="c rpm"><div class="k">RPM <i>CH2</i></div><div class="v num" data-f="rpm">—</div></div>
     <div class="c"><div class="k">AVANS</div><div class="v num"><span data-f="adv">—</span><u>°</u></div></div>
     <div class="c"><div class="k">KL30</div><div class="v num"><span data-f="vbat">—</span><u>V</u></div></div>
@@ -591,7 +591,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
   <div class="ig-g">
     <div class="kv big k15">KL15<b class="num"><span data-f="kl15">—</span><u>V</u></b></div>
     <div class="kv big">KL30<b class="num"><span data-f="kl30">—</span><u>V</u></b></div>
-    <div class="kv big adv" id="kv-adv">Avans real<b class="num"><span data-f="adv">—</span><u>°</u></b></div>
+    <div class="kv big adv" id="kv-adv">Avans<b class="num"><span data-f="adv">—</span><u>°</u></b></div>
     <div class="kv" id="kv-bv">Tensiune ardere<b class="num"><span data-f="burnv">—</span><u>V</u></b></div>
     <div class="kv" id="kv-bms">Durată ardere<b class="num"><span data-f="burnms">—</span><u>ms</u></b></div>
     <div class="kv" id="kv-dw">Dwell<b class="num"><span data-f="dwell">—</span><u>ms</u></b></div>
@@ -600,7 +600,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
     <div class="kv">Scântei<b class="num" data-f="scnt">—</b></div>
   </div>
   <div class="relay-bar" id="relay-bar"><span class="dot"></span><span class="rt" id="relay-txt">Releu KL15: fără date</span><span class="rv num" id="relay-v"></span></div>
-  <div class="ig-ft" id="ign-ft">Avans real = scânteie (IGN-) → semnal TD, plus trim. Ardere, dwell și vârf provin din forma de undă a bobinei (ADC DMA).</div>
+  <div class="ig-ft" id="ign-ft">Avans = scânteie (IGN-) → semnal TD, plus trim. Ardere, dwell și vârf provin din forma de undă a bobinei (ADC DMA).</div>
 </section>
 
 <section class="lamps">
@@ -934,7 +934,9 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
 
     p.noSig = (p.flags & FLAG_STALLED) && p.dutyH + p.duty < 50;   // stalled before any valid DuCy cycle: firmware sends H = L = 0
     setField("duty", p.noSig ? "—" : fmt(p.duty, 1));
-    setField("dutyh", p.noSig ? "—" : fmt(p.dutyH, 1));
+    var errOn = false;
+    for (var ei = 0; ei < CODES.length; ei++) { var ek = CODES[ei]; if (ek.seen && t - ek.seen <= LATCH_MS) { errOn = true; break; } }
+    setField("errst", p.noSig ? "—" : (errOn ? "Eroare prezentă" : "Fără erori"));
     setField("rpm", fmt(p.rpm, 0));
     setField("adv", fmt(p.adv, 1));
     setField("vbat", fmt(p.vbat, 2));
@@ -1005,7 +1007,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
     else st.textContent = (q.adc === 1 ? "ADC DMA" : "ADC oneshot") + " · " + (fr ? "undă proaspătă" : "fără scânteie");
     if (sparkAvail === false && connected) { ft.className = "ig-ft bad"; ft.innerHTML = "Firmware-ul conectat nu are caracteristica <b>6a7e1003</b> (necesită fw v0.6). Se afișează doar KL15/KL30 din 1001."; }
     else if (q && q.adc === 0) { ft.className = "ig-ft"; ft.innerHTML = "Mod ADC oneshot (fallback): dwell indisponibil, vârf/ardere aproximative."; }
-    else { ft.className = "ig-ft"; ft.innerHTML = "Avans real = scânteie (IGN-) → semnal TD, inclusiv trim <b>" + (q ? (q.trim > 0 ? "+" : "") + fmt(q.trim, 1) + "°" : "—") + "</b>. Ardere, dwell și vârf: ultima scânteie analizată (ADC DMA)."; }
+    else { ft.className = "ig-ft"; ft.innerHTML = "Avans = scânteie (IGN-) → semnal TD, inclusiv trim <b>" + (q ? (q.trim > 0 ? "+" : "") + fmt(q.trim, 1) + "°" : "—") + "</b>. Ardere, dwell și vârf: ultima scânteie analizată (ADC DMA)."; }
   }
 
   /* ---------------- lamp evaluation ---------------- */
@@ -1074,7 +1076,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
       if (last.noSig) return "STALLED (bit0): niciun ciclu DuCy valid de la pornire (H = L = 0) – verifică firul";
       return "STALLED (bit0): fără fronturi DuCy de 3 s – blocat pe " + (last.duty <= 0.5 ? "HIGH (L 0 % → E00)" : last.duty >= 99.5 ? "LOW (L 100 % → E100; contact oprit / fir deconectat)" : "L " + fmt(last.duty, 0) + " %");
     },
-    AVANS: function () { return advInvalidN >= 3 ? "Avans invalid (bit2 = 0) cu motorul pornit: lipsesc impulsurile IGN-_DET sau avansul e în afara 0–60°" : "Avans real (scânteie → TD): " + (last ? fmt(last.adv, 1) + "° · " + last.advUs + " µs" : "—") + (sp ? " · trim " + fmt(sp.trim, 1) + "° inclus" : ""); },
+    AVANS: function () { return advInvalidN >= 3 ? "Avans invalid (bit2 = 0) cu motorul pornit: lipsesc impulsurile IGN-_DET sau avansul e în afara 0–60°" : "Avans (scânteie → TD): " + (last ? fmt(last.adv, 1) + "° · " + last.advUs + " µs" : "—") + (sp ? " · trim " + fmt(sp.trim, 1) + "° inclus" : ""); },
     ECRAN: function () {
       if (WL.state === "held") return "Ecran menținut aprins (Screen Wake Lock) cât timp aplicația e deschisă și vizibilă; se re-activează automat când revii în aplicație.";
       if (WL.state === "unsupported") return "Wake Lock indisponibil în acest browser: ecranul se poate stinge, iar Chrome suspendă pagina (BLE + REC se opresc → gol în date). Setează „Timp până la stingerea ecranului” ≥ 10 min.";
@@ -2331,7 +2333,7 @@ body[data-screen]:not([data-screen=live]) :is(.ign,.cfg){display:none!important}
   /* ---------- v1: auxiliary replay chart (supply / spark channels from 6a7e1003) ---------- */
   var AUX = {
     kl: { lab: "KL15 · KL30 (V)", u: "V", s: [["k15", "ok", "KL15"], ["k30", "info", "KL30"]], dec: 2 },
-    adv: { lab: "Avans real (°)", u: "°", s: [["adv", "mk", "Avans"]], dec: 1 },
+    adv: { lab: "Avans (°)", u: "°", s: [["adv", "mk", "Avans"]], dec: 1 },
     bms: { lab: "Durată ardere (ms)", u: "ms", s: [["bms", "duty", "Ardere"]], dec: 2 },
     bv: { lab: "Tensiune ardere (V)", u: "V", s: [["bv", "duty", "Ardere V"]], dec: 1 },
     dw: { lab: "Dwell (ms)", u: "ms", s: [["dw", "rpm", "Dwell"]], dec: 2 },
