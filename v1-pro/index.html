@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="pro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#26374b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%223%22 fill=%22%2326374b%22/%3E%3Cpath d=%22M3 13h4l2-6 4 12 2-6h6%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221.8%22/%3E%3C/svg%3E">
+<title>Jetronic Reader</title>
+<style>:root{
+  --bg:#e8eaed; --panel:#ffffff; --head:#f4f5f7; --line:#c5cad1; --line2:#dde1e6;
+  --text:#1d232b; --muted:#5d6672; --faint:#8a929c;
+  --accent:#1f4e85; --accent-d:#173c66; --accent-l:#e3ecf6; --title:#26374b;
+  --ok:#2e7d32; --ok-l:#e5f1e6; --warn:#b26a00; --warn-l:#fdf0d9; --bad:#c62828; --bad-l:#fbe3e3;
+  /* colours read by the replay charts */
+  --info:#1f4e85; --mk:#55702a; --duty:#b45309; --rpm:#1f4e85;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+html,body{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body{display:flex;flex-direction:column;min-height:100vh;height:100vh;overflow:hidden}
+.num,td.v,td.m,.k b,.ro b{font-variant-numeric:tabular-nums}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+button:disabled{cursor:default}
+a{color:var(--accent)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+[hidden]{display:none!important}
+.only-phone{display:none!important}
+
+/* ---------- window chrome ---------- */
+.titlebar{height:34px;background:var(--title);color:#fff;display:flex;align-items:center;padding:0 10px 0 12px;gap:10px;flex:none}
+.titlebar .appico{width:18px;height:18px;border:1.5px solid #c9d4e2;border-radius:2px;display:grid;place-items:center;flex:none}
+.titlebar .appico svg{width:12px;height:12px;stroke:#fff;stroke-width:1.8;fill:none}
+.titlebar .name{font-weight:600;white-space:nowrap}
+.titlebar .doc{color:#b8c4d3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titlebar .sp{flex:1}
+.titlebar .conn{display:flex;align-items:center;gap:6px;font-size:12px;border:1px solid #4d6078;border-radius:3px;padding:2px 8px;color:#dfe6ee;white-space:nowrap;max-width:60vw;overflow:hidden}
+.titlebar .conn #status{overflow:hidden;text-overflow:ellipsis}
+.titlebar .tbi{color:#fff;width:32px;height:32px;display:grid;place-items:center}
+.titlebar .tbi .i{width:19px;height:19px}
+.toolbar{min-height:40px;background:#f7f8f9;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:4px;padding:4px 8px;flex:none}
+.tb{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border:1px solid transparent;border-radius:3px;font-size:13px;color:var(--text);white-space:nowrap;text-decoration:none;background:none}
+.tb:hover:not(:disabled){border-color:var(--line)}
+.tb.bordered{border-color:var(--line);background:#fff}
+.tb.bordered:hover:not(:disabled){background:#f4f6f8}
+.tb.primary,.tb.primary:hover:not(:disabled){background:var(--accent);border-color:var(--accent-d);color:#fff}
+.tb.primary .tsub{color:#c9d7e8}
+.tb:disabled{color:var(--faint)}
+.tb.primary:disabled{background:#8ea6c2;border-color:#8ea6c2;color:#fff}
+.tb.danger{color:var(--bad)}
+.tb.arm{background:var(--bad);border-color:#9e1f1f;color:#fff}
+.tb .dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none}
+.tb:disabled .dot{background:#d8a9a9}
+.tb.rec-on{border-color:#d9a3a3;background:var(--bad-l);color:#8e1c1c}
+.tb.sm{height:22px;padding:0 7px;font-size:12px}
+.tb .tsub{color:var(--muted);font-size:12px}
+#connect:disabled{color:var(--text)}
+#connect:disabled .tsub{color:var(--muted)}
+.tsep{width:1px;height:22px;background:var(--line);margin:0 6px;flex:none}
+.tsp{flex:1}
+.msgbar{display:none;padding:7px 12px;font-size:12.5px;border-bottom:1px solid var(--line);flex:none}
+.msgbar.bad{background:var(--bad-l);color:#7c1717;border-color:#e5b9b9}
+.msgbar.warn{background:var(--warn-l);color:#5c3a00;border-color:#e6c48a;display:flex;gap:8px;align-items:flex-start}
+.msgbar.warn .i{color:var(--warn);margin-top:1px}
+.tabs{display:flex;padding:6px 8px 0;background:var(--bg);border-bottom:1px solid var(--line);flex:none}
+.tab{padding:6px 16px;font-size:13px;border:1px solid transparent;border-bottom:0;border-radius:3px 3px 0 0;color:var(--muted);margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px}
+.tab:hover{color:var(--text)}
+.tab.on{background:var(--panel);border-color:var(--line);color:var(--text);font-weight:600}
+.tbadge{font-style:normal;font-size:11px;font-weight:700;min-width:17px;height:17px;border-radius:9px;padding:0 5px;display:inline-grid;place-items:center;color:#fff;background:var(--bad)}
+.tbadge.warn{background:#d98e04}
+.statusbar{height:24px;background:#f1f2f4;border-top:1px solid var(--line);display:flex;align-items:stretch;font-size:12px;color:var(--muted);flex:none;overflow:hidden}
+.statusbar>div{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--line2);white-space:nowrap}
+.statusbar>div.sp{flex:1;border-right:0}
+.statusbar b{color:var(--text);font-weight:600}
+.statusbar .sb-rec b{color:var(--bad)}
+.led{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none;background:#c3c8ce}
+.led.ok{background:var(--ok)}.led.warn{background:#e09a00}.led.bad{background:var(--bad)}.led.info{background:var(--accent)}.led.off{background:#c3c8ce}
+
+/* ---------- work area ---------- */
+.work{flex:1;min-height:0;overflow:auto;padding:8px;background:var(--bg)}
+.scr{display:none}
+body[data-screen=live] #scr-live,body[data-screen=trend] #scr-trend,body[data-screen=codes] #scr-codes,body[data-screen=sessions] #scr-sessions,body[data-screen=replay] #scr-replay,body[data-screen=settings] #scr-settings{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ph{min-height:28px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--head);border-bottom:1px solid var(--line2);font-size:12.5px;font-weight:600;color:var(--text)}
+.ph .sub{font-weight:400;color:var(--muted)}
+.ph .sp{flex:1}
+.ph .i{color:var(--accent)}
+.lnk{font-weight:400;color:var(--accent);font-size:12.5px;text-decoration:none;cursor:pointer}
+.lnk:hover{text-decoration:underline}
+.pb{padding:8px 10px;min-height:0}
+.note{font-size:12px;color:var(--muted);padding:8px 10px;line-height:1.45}
+.empty{padding:18px;color:var(--muted);text-align:center;display:block}
+.hint ul{padding-left:18px;line-height:1.6;color:var(--text)}
+
+/* tables */
+table.grid{width:100%;border-collapse:collapse;font-size:12.5px}
+table.grid th{font-weight:600;color:var(--muted);text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);background:#fafbfc;white-space:nowrap;font-size:12px}
+table.grid td{padding:4px 8px;border-bottom:1px solid #eceef1;white-space:nowrap;vertical-align:middle}
+table.grid td.wrap{white-space:normal}
+table.grid td.v,table.grid th.r,table.grid td.r{text-align:right}
+table.grid td.v{font-weight:600}
+table.grid td.u{color:var(--muted);width:1%;padding-left:2px}
+table.grid td.m{color:var(--muted);text-align:right}
+table.grid tr.pick td{background:var(--accent-l)}
+table.grid tr.grp td{background:#f4f5f7;font-weight:600;color:var(--muted);font-size:11.5px;padding:3px 8px}
+table.grid tr.sel-row{cursor:pointer}
+table.grid tr.sel-row:hover td{background:#f4f7fb}
+table.grid tr.sat td.v{color:var(--warn)}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:400;white-space:nowrap}
+.st.ok{color:var(--text)}.st.warn{color:var(--warn)}.st.bad{color:var(--bad)}.st.info{color:var(--accent)}.st.off{color:var(--faint)}
+.c-st{width:1%}
+
+/* ---------- live ---------- */
+#scr-live{height:100%;flex-direction:column;gap:8px}
+body[data-screen=live] #scr-live{display:flex}
+.live-grid{flex:1;min-height:0;display:grid;gap:8px;grid-template-columns:minmax(0,1fr) 480px;
+  grid-template-areas:"g s" "a s" "t s" "c s";grid-template-rows:auto auto minmax(220px,1fr) auto}
+.lv-gauges{grid-area:g;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lv-alert{grid-area:a}.lv-trend{grid-area:t}.lv-codes{grid-area:c}
+.lv-side{grid-area:s;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto}
+.lv-side>.panel{flex:none}
+.lv-side>.lv-checks{flex:1 0 auto}
+.hint{margin-bottom:0;flex:none}
+.dial .pb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 8px 6px}
+.dial .face{width:100%;max-width:184px}
+.dial .face svg{display:block;width:100%;height:auto}
+.dial .needle{transition:transform .25s linear}
+.ro-box{display:flex;align-items:baseline;justify-content:center;gap:4px;border:1px solid var(--line);background:#fbfbfc;border-radius:2px;padding:2px 10px;min-width:120px}
+.ro-box b{font-size:20px;font-weight:600}
+.ro-box span{color:var(--muted);font-size:12px}
+.ro-box.warn{border-color:#e0b25e;background:var(--warn-l)}
+.gfoot{display:flex;justify-content:space-between;width:100%;font-size:11.5px;color:var(--muted);padding:0 4px}
+.gfoot b{color:var(--text);font-weight:600}
+.al{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;font-size:12.5px}
+.al b{display:block}
+.al.warn{background:var(--warn-l);color:#5c3a00}.al.warn .i{color:var(--warn)}.al.warn b{color:#3d2700}
+.al.bad{background:var(--bad-l);color:#7c1717}.al.bad .i{color:var(--bad)}
+.lv-alert{border-color:#e0b25e}
+.trendbox{padding:4px 8px 4px;flex:1;min-height:0;overflow:hidden;position:relative}
+.trendbox svg{display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center;font-weight:400;flex-wrap:wrap}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.legend i.d{border-top-style:dashed}
+.lg-row{height:19px;padding-left:58px}
+.trend-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;pointer-events:none}
+.codes-strip{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:5px}
+.code{border:1px solid var(--line);border-radius:2px;padding:4px 6px;display:flex;flex-direction:column;gap:1px;background:#fff;text-align:left;min-width:0}
+.code:hover{border-color:#9aa6b4}
+.code .c{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px}
+.code .c .sp{flex:1}.code .act{font-size:10.5px;font-weight:600}
+.code .t{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.code.warn{border-color:#e0b25e;background:var(--warn-l)}.code.warn .t,.code.warn .act{color:#7a4a00}
+.code.bad{border-color:#e09999;background:var(--bad-l)}.code.bad .act{color:var(--bad)}
+.code.sel{outline:2px solid var(--accent);outline-offset:-1px}
+.vals td:first-child{width:46%}
+.vals td,.checks td{padding-top:3px;padding-bottom:3px}
+.rec-kv{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+.k{color:var(--muted);font-size:12px}
+.k b{display:block;color:var(--text);font-size:13px;font-weight:600}
+.rec-ov{height:40px;margin:6px 0 2px}
+.lv-rec.idle .rec-ov{display:none}
+.rec-ov svg{display:block;width:100%;height:40px}
+.rec-ft{display:flex;gap:10px;font-size:12px;color:var(--muted);align-items:center;margin-top:4px}
+.rec-ft .gp{color:var(--warn)}
+.rec-ft a{margin-left:auto;text-decoration:none}
+.rec-ft .err{color:var(--bad)}
+.acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.checks td:first-child{width:60%}
+
+/* ---------- trend ---------- */
+.trend-panel{height:calc(100vh - 160px);min-height:420px}
+.trend-panel .trendbox{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:#fff}
+.seg button{padding:0 10px;height:22px;font-size:12px;border-left:1px solid var(--line);color:var(--muted)}
+.seg button:first-child{border-left:0}
+.seg button.on{background:var(--accent-l);color:var(--accent-d);font-weight:600}
+#tr-freeze.on{background:var(--warn-l);border-color:#e0b25e}
+
+/* ---------- codes ---------- */
+.codes-grid{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:8px;align-items:start}
+.codes-grid .side{display:grid;gap:8px}
+.code-id{font-weight:700;display:flex;align-items:center;gap:7px}
+.codes-tab tr.on-bad td.state{color:var(--bad);font-weight:600}
+.codes-tab tr.on-warn td.state{color:var(--warn);font-weight:600}
+.codes-tab td.state{color:var(--muted)}
+.detail{border-top:1px solid var(--line);padding:9px 10px;background:#fafbfc;font-size:12.5px;line-height:1.5}
+.detail p{margin-top:3px}.detail .when{color:var(--muted)}
+.log{font-size:12px;max-height:260px;overflow:auto}
+.log>div{padding:4px 10px;border-bottom:1px solid #eceef1}
+.log .t{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+.log .e{color:var(--bad)}.log .w{color:var(--warn)}.log .g{color:var(--text)}
+
+/* ---------- sessions ---------- */
+.store{margin-bottom:8px}
+.store-kv{display:flex;gap:28px;padding:8px 10px;align-items:flex-end;flex-wrap:wrap}
+.store-kv .wide{flex:1;min-width:220px;color:var(--muted)}
+.ses-tab td{vertical-align:middle}
+.ses-tab .sd{font-weight:600}
+.ses-tab .sb{color:var(--muted);font-size:11.5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;white-space:normal}
+.badge{font-size:11px;border:1px solid var(--line);border-radius:2px;padding:0 5px;color:var(--muted);background:#fafbfc}
+.badge.bad{color:var(--bad);border-color:#e09999;background:var(--bad-l)}
+.badge.warn{color:#7a4a00;border-color:#e0b25e;background:var(--warn-l)}
+.spk{width:180px;height:30px}.spk svg{display:block;width:180px;height:30px}
+.cc{display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:12px;margin-right:6px}
+.cc.none{color:var(--faint);font-weight:400}
+.acts-cell{display:flex;gap:4px;justify-content:flex-end}
+.acts-cell .tb{height:26px;padding:0 8px;font-size:12.5px}
+
+/* ---------- replay ---------- */
+.subnav{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.subnav .tt{flex:1;min-width:0;display:flex;flex-direction:column}
+.subnav .tt b{font-size:14px}
+.subnav .tt span{color:var(--muted);font-size:12px}
+.rp-tabs{margin-bottom:8px}
+.rp-tabs button{height:28px;font-size:12.5px;padding:0 14px}
+#rp-time,#rp-xy{display:grid;gap:8px}
+.ro{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0}
+.ro .k{padding:6px 10px;border-right:1px solid #eceef1;border-bottom:1px solid #eceef1}
+.ro .k b{font-size:14px}
+.ro .k u{text-decoration:none;color:var(--muted);font-weight:400;font-size:12px}
+.ro .k.tm b{color:var(--bad)}
+.ro .k.bad b{color:var(--bad)}.ro .k.warn b{color:var(--warn)}
+#ch-main,#ch-aux,#ch-ov{touch-action:none;user-select:none;-webkit-user-select:none}
+#ch-main svg,#ch-aux svg,#ch-ov svg,#xy svg{display:block;width:100%}
+.fchips{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
+.fchips button{height:24px;padding:0 9px;font-size:12px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--muted)}
+.fchips button.on{background:var(--accent-l);border-color:#9db4d0;color:var(--accent-d);font-weight:600}
+.zoom{display:flex;gap:4px;align-items:center;margin-top:6px}
+.zoom .tb{height:26px;min-width:30px;justify-content:center;padding:0 8px}
+.zoom .lbl{flex:1;text-align:center;font-size:12px;color:var(--muted);line-height:1.3}
+.zoom .lbl b{color:var(--text)}
+.zh{font-size:11.5px;color:var(--faint);margin-top:4px}
+.mks{max-height:240px;overflow:auto}
+.mks .row{display:flex;gap:10px;padding:5px 10px;border-bottom:1px solid #eceef1;cursor:pointer;font-size:12.5px}
+.mks .row:hover{background:#f4f7fb}
+.mks .row.cur{background:var(--accent-l)}
+.mks .empty{padding:10px}
+.xyleg{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--muted);padding:4px 2px}
+.xyleg .gb{flex:1;height:6px;border-radius:1px}
+.bands .sw{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+.bands td{text-align:right}.bands td:first-child{text-align:left}
+
+/* ---------- settings ---------- */
+#scr-settings{max-width:860px}
+.cfg{margin-bottom:8px}
+.kvt td:first-child{color:var(--muted);width:50%}
+.frow{display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.frow label{display:flex;flex-direction:column;font-weight:600;font-size:12.5px}
+.frow small{font-weight:400;color:var(--muted);font-size:11.5px}
+.spin{display:flex;gap:4px}
+.spin input{width:90px;height:30px;border:1px solid var(--line);border-radius:3px;text-align:right;padding:0 8px;font-variant-numeric:tabular-nums;background:#fff}
+.spin .tb{width:32px;justify-content:center;padding:0}
+.msg{margin-top:8px;font-size:12.5px;min-height:18px}
+.msg.ok{color:var(--text)}.msg.ok:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:7px}
+.msg.bad{color:var(--bad)}
+.cfg .note{padding:6px 0 0}
+.fr{margin-top:10px;padding-top:10px;border-top:1px solid #eceef1}
+body.off #cfg .acts .tb,body.off #cfg .spin .tb,body.off #trim-in{opacity:.55}
+
+/* ---------- marker sheet ---------- */
+.mk-sheet{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);width:min(460px,calc(100vw - 16px));background:#fff;border:1px solid var(--line);border-radius:3px;box-shadow:0 4px 18px rgba(0,0,0,.18);z-index:20;overflow:hidden}
+.mk-sheet .h{display:flex;gap:10px;align-items:baseline;padding:8px 10px;background:var(--head);border-bottom:1px solid var(--line2)}
+.mk-sheet .h span{color:var(--muted);font-size:12px}
+.mk-sheet .chips{display:flex;flex-wrap:wrap;gap:5px;padding:9px 10px}
+.mk-sheet .chips button{height:28px;padding:0 10px;border:1px solid var(--line);border-radius:3px;background:#fff}
+.mk-sheet .chips button:hover{background:var(--accent-l)}
+.mk-sheet .bar{height:3px;background:#eceef1}
+.mk-sheet .bar b{display:block;height:3px;background:var(--accent);width:100%}
+
+/* ---------- narrower desktops ---------- */
+@media (max-width:1250px){
+  .live-grid{grid-template-columns:minmax(0,1fr) 400px}
+  .codes-strip{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .ro{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+/* ---------- phone ---------- */
+@media (max-width:899px){
+  .only-desk{display:none!important}
+  .only-phone{display:revert!important}
+  span.only-phone{display:inline!important}
+  .titlebar{height:48px;padding:0 6px 0 12px}
+  .titlebar .appico{display:none}
+  .titlebar .name{font-size:16px}
+  .titlebar .doc{display:none}
+  .toolbar{gap:6px;padding:6px 8px;flex-wrap:nowrap;overflow-x:auto}
+  .tsep{display:none}
+  .tb .tsub{display:none}
+  #connect{flex:1;justify-content:center}
+  .tabs{padding:0;background:#fff}
+  .tab{flex:1;justify-content:center;border:0;border-bottom:2px solid transparent;border-radius:0;padding:10px 0 9px;margin:0}
+  .tab.on{border-bottom-color:var(--accent);color:var(--accent);background:#fff}
+  .work{padding:8px}
+  #scr-live{height:auto}
+  .live-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"a" "g" "s";grid-template-rows:none}
+  .lv-side{overflow:visible}
+  .lv-codes,.lv-checks,.lv-trend{display:none}
+  .lv-gauges{grid-template-columns:1fr 1fr}
+  .dial .ph{min-height:26px;font-size:12px}.dial .ph .sub{display:none}
+  .dial .face{max-width:146px}
+  .ro-box{min-width:110px;padding:1px 8px}.ro-box b{font-size:17px}
+  .gfoot{font-size:11px}
+  .vals th:nth-child(4),.vals td:nth-child(4),.vals th:nth-child(5),.vals td:nth-child(5){display:none}
+  table.grid td,table.grid th{padding:5px 7px}
+  .trend-panel{height:calc(100vh - 170px);min-height:380px}
+  .trend-panel .ph{flex-wrap:wrap}
+  .codes-grid{grid-template-columns:minmax(0,1fr)}
+  .codes-tab td.m{white-space:normal}
+  .store-kv{gap:16px}
+  .store .ph .sub{display:none}
+  .ses-tab td{white-space:normal}
+  .acts-cell{gap:3px}
+  .ses-tab th:last-child{width:1%}
+  .acts-cell .tb span{display:none}
+  .acts-cell .tb{padding:0 7px}
+  .ro{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .subnav{flex-wrap:wrap}
+  .rp-tabs{display:flex}.rp-tabs button{flex:1;padding:0 6px}
+  .statusbar{height:26px}
+  .zh{display:none}
+  .frow{gap:8px}
+}
+</style>
+</head>
+<body class="off" data-screen="live">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-bt" viewBox="0 0 24 24"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></symbol>
+ <symbol id="i-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5" fill="currentColor" stroke="none"/></symbol>
+ <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></symbol>
+ <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4h11l-2 4 2 4H6"/></symbol>
+ <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5h6l2 2h10V19H3z"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+ <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></symbol>
+ <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+ <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+ <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+ <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></symbol>
+ <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19zM12 10v4.5M12 17.5h.01"/></symbol>
+ <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+ <symbol id="i-batt" viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10"/><path d="M21 10.5v3"/></symbol>
+ <symbol id="i-del" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+ <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19"/><path d="M12 8v5M12 16.5v.5"/></symbol>
+</svg>
+
+<div class="titlebar">
+  <span class="appico"><svg viewBox="0 0 24 24"><path d="M3 13h4l2-6 4 12 2-6h6"/></svg></span>
+  <span class="name">Jetronic Reader</span><span class="doc" id="doc-title">— Live data</span>
+  <span class="sp"></span>
+  <span class="conn" id="conn-pill"><span class="led off" id="conn-led"></span><span id="status">Not connected</span></span>
+  <button type="button" class="tbi only-phone" id="tb-settings-ph" aria-label="Device settings" title="Device settings"><svg class="i"><use href="#i-gear"/></svg></button>
+</div>
+
+<div class="toolbar" id="toolbar">
+  <button id="connect" type="button" class="tb bordered primary-off" title="">
+    <svg class="i"><use href="#i-bt"/></svg><span id="btn-label">Connect</span><span id="btn-sub" class="tsub">Search for JetronicReader</span>
+  </button>
+  <span class="tsep"></span>
+  <button type="button" class="tb" id="tb-rec"><span class="dot"></span><span id="tb-rec-l">Record</span></button>
+  <button type="button" class="tb" id="tb-mk"><svg class="i"><use href="#i-flag"/></svg><span>Add marker</span></button>
+  <button type="button" class="tb" id="tb-stop"><svg class="i"><use href="#i-stop"/></svg><span>Stop</span></button>
+  <span class="tsep only-desk"></span>
+  <button type="button" class="tb only-desk" data-go="sessions"><svg class="i"><use href="#i-folder"/></svg><span>Sessions</span></button>
+  <a class="tb only-desk" id="tb-playback" href="../playback-pro/"><svg class="i"><use href="#i-chart"/></svg><span>Playback</span></a>
+  <span class="tsp"></span>
+  <button type="button" class="tb only-desk" data-go="settings"><svg class="i"><use href="#i-gear"/></svg><span>Settings</span></button>
+  <button type="button" class="tb only-desk" id="tb-help"><svg class="i"><use href="#i-help"/></svg><span>Help</span></button>
+</div>
+
+<div id="banner" class="msgbar bad"></div>
+<div id="err" class="msgbar bad"></div>
+<div id="wl-note" class="msgbar warn" hidden><svg class="i"><use href="#i-phone"/></svg><span id="wl-txt"></span></div>
+
+<div class="tabs" id="tabs">
+  <button type="button" class="tab" data-go="live"><span class="only-desk">Live data</span><span class="only-phone">Live</span></button>
+  <button type="button" class="tab" data-go="trend">Trend</button>
+  <button type="button" class="tab" data-go="codes"><span class="only-desk">Fault codes</span><span class="only-phone">Codes</span><i class="tbadge" id="tab-badge" hidden></i></button>
+  <button type="button" class="tab" data-go="sessions">Sessions</button>
+  <button type="button" class="tab only-desk" data-go="settings">Device settings</button>
+</div>
+
+<div class="work">
+<!-- ======================= LIVE ======================= -->
+<section class="scr" id="scr-live">
+  <div id="hint" class="panel hint">
+    <div class="ph"><svg class="i"><use href="#i-info"/></svg>How to connect</div>
+    <div class="pb"><ul>
+      <li>Use Chrome on Android or on a computer, with Bluetooth turned on.</li>
+      <li>Allow “Nearby devices” (Android 12 and newer) or “Location” (older Android) when asked.</li>
+      <li>No pairing in the phone settings is needed.</li>
+      <li>Press <b>Connect</b> and choose <b>JetronicReader</b> from the list.</li>
+      <li>On an iPhone, use the Bluefy browser.</li>
+    </ul></div>
+  </div>
+  <div class="live-grid">
+    <div class="lv-gauges" id="gauges"></div>
+    <div class="panel lv-alert" id="code-alert" hidden></div>
+    <div class="panel lv-trend only-desk">
+      <div class="ph">Trend <span class="sub">last 60 seconds</span><span class="sp"></span><button type="button" class="lnk" data-go="trend">Open trend view</button></div>
+      <div class="pb trendbox" id="live-trend"></div>
+    </div>
+    <div class="panel lv-codes">
+      <div class="ph">Fault codes <span class="sub only-desk">from the engine control unit</span><span class="sp"></span><span id="lamp-sum" class="st off">—</span></div>
+      <div class="pb"><div class="codes-strip" id="codes-strip"></div></div>
+    </div>
+    <div class="lv-side">
+    <div class="panel lv-values">
+      <div class="ph">Measured values<span class="sp"></span><button type="button" class="lnk" id="mm-reset" title="Start the min / max columns again">Reset min / max</button></div>
+      <table class="grid vals">
+        <thead><tr><th>Value</th><th class="r">Current</th><th></th><th class="r">Min</th><th class="r">Max</th><th class="c-st">Status</th></tr></thead>
+        <tbody id="vals-body"></tbody>
+      </table>
+    </div>
+    <section class="panel lv-rec idle" id="rec">
+      <div class="ph">Recording<span class="sp"></span><span class="st off" id="rec-state"><span class="led off"></span><span id="rec-tag">Not recording</span></span></div>
+      <div class="pb">
+        <div class="rec-kv">
+          <div class="k">Duration<b id="rec-time" class="num">—</b></div>
+          <div class="k">Recorded<b id="rec-l2">—</b></div>
+        </div>
+        <div class="rec-ov" id="rec-ov"></div>
+        <div class="rec-ft"><span class="sv" id="rec-svw"><span id="rec-sv">—</span></span><span class="gp" id="rec-gap"></span><a href="#sesiuni" id="rec-ses">Sessions</a></div>
+        <div class="acts">
+          <button type="button" class="tb bordered" id="rec-start"><span class="dot"></span>Start recording</button>
+          <button type="button" class="tb bordered" id="rec-mk"><svg class="i"><use href="#i-flag"/></svg>Add marker</button>
+          <button type="button" class="tb bordered" id="rec-stop"><svg class="i"><use href="#i-stop"/></svg>Stop and save</button>
+        </div>
+      </div>
+    </section>
+    <div class="panel lv-checks">
+      <div class="ph">Signal checks</div>
+      <table class="grid checks" id="checks"></table>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= TREND ======================= -->
+<section class="scr" id="scr-trend">
+  <div class="panel trend-panel">
+    <div class="ph">Trend<span class="sp"></span>
+      <span class="seg" id="tr-win"><button type="button" data-w="10">10 s</button><button type="button" data-w="60" class="on">60 s</button><button type="button" data-w="300">5 min</button></span>
+      <button type="button" class="tb bordered sm" id="tr-freeze"><svg class="i"><use href="#i-pause"/></svg><span>Freeze</span></button>
+    </div>
+    <div class="pb trendbox big" id="trend-big"></div>
+  </div>
+</section>
+
+<!-- ======================= CODES ======================= -->
+<section class="scr" id="scr-codes">
+  <div class="codes-grid">
+    <div class="panel">
+      <div class="ph">Fault codes <span class="sub">from the engine control unit</span><span class="sp"></span><span id="lamp-sum2" class="st off">—</span></div>
+      <table class="grid codes-tab"><thead><tr><th style="width:1%">Code</th><th>Meaning</th><th>State</th><th class="r">Last seen</th></tr></thead><tbody id="codes-tab"></tbody></table>
+      <div class="detail" id="detail"></div>
+      <div class="note">A code stays lit for 10 seconds after it was last shown by the control unit. Select a row for details.</div>
+    </div>
+    <div class="side">
+      <div class="panel"><div class="ph">Signal checks</div><table class="grid checks" id="checks2"></table></div>
+      <div class="panel"><div class="ph">Event log<span class="sp"></span><span class="sub">newest first</span></div><div class="log" id="log"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SESSIONS ======================= -->
+<section class="scr" id="scr-sessions">
+  <div class="panel store">
+    <div class="ph">Recorded sessions<span class="sub">saved on this device</span><span class="sp"></span><a class="lnk" href="../playback-pro/">Open Drive playback</a></div>
+    <div class="store-kv">
+      <div class="k">Sessions<b class="num" id="st-n">—</b></div>
+      <div class="k">Recorded data<b class="num" id="st-b">—</b></div>
+      <div class="k">Free space<b class="num" id="st-f">—</b></div>
+      <div class="k wide" id="st-p">—</div>
+    </div>
+  </div>
+  <div id="ses-list"></div>
+</section>
+
+<!-- ======================= REPLAY (one session) ======================= -->
+<section class="scr" id="scr-replay">
+  <div class="subnav">
+    <button class="tb bordered back" type="button" data-back="sessions"><svg class="i"><use href="#i-back"/></svg>Sessions</button>
+    <div class="tt"><b id="rp-title">—</b><span id="rp-sum"></span></div>
+    <button class="tb bordered" type="button" id="rp-csv" title="Export CSV"><svg class="i"><use href="#i-dl"/></svg><span>Export CSV</span></button>
+  </div>
+  <div class="seg rp-tabs"><button type="button" id="tab-t" class="on">Time · duty and engine speed</button><button type="button" id="tab-xy">Duty against engine speed</button></div>
+  <div id="rp-empty" class="panel empty" hidden>This session contains no data.</div>
+  <div id="rp-time">
+    <div class="panel"><div class="ph">Values at the cursor</div><div class="ro" id="ro"></div></div>
+    <div class="panel chart" id="chart">
+      <div class="ph">Signals<span class="sp"></span><span class="legend" id="ch-lg"></span></div>
+      <div class="pb">
+        <div id="ch-main"></div>
+        <div class="fchips" id="aux-chips"><button type="button" data-a="kl" class="on">Ignition · battery</button><button type="button" data-a="adv">Advance</button><button type="button" data-a="bms">Burn time</button><button type="button" data-a="bv">Burn voltage</button><button type="button" data-a="dw">Dwell</button><button type="button" data-a="pk">Spark peak</button><button type="button" data-a="rd">Relay drop</button></div>
+        <div id="ch-aux"></div>
+        <div id="ch-ov"></div>
+        <div class="zoom"><button type="button" class="tb bordered" data-z="out" aria-label="Zoom out">−</button><button type="button" class="tb bordered" data-z="in" aria-label="Zoom in">+</button><button type="button" class="tb bordered" data-z="all">All</button><div class="lbl" id="z-lbl"></div><button type="button" class="tb bordered" data-z="left" aria-label="Back">‹</button><button type="button" class="tb bordered" data-z="right" aria-label="Forward">›</button></div>
+        <div class="zh">Scroll or pinch to zoom · drag the chart to move · click or drag the red line to move the cursor</div>
+      </div>
+    </div>
+    <div class="panel"><div class="ph">Markers<span class="sp"></span><span class="sub">select to jump</span></div><div class="mks" id="mks"></div></div>
+  </div>
+  <div id="rp-xy" hidden>
+    <div class="fchips" id="xy-chips"><button type="button" data-f="all" class="on">Whole session</button><button type="button" data-f="win" id="xy-win">Window</button><button type="button" data-f="nz">Without engine stopped</button></div>
+    <div class="panel xyc"><div class="pb" id="xy"></div></div>
+    <div class="panel"><div class="ph">Duty by engine speed band<span class="sp"></span><span class="sub" id="xy-n"></span></div><table class="grid bands" id="bands"></table></div>
+    <div class="note">Each point is one sample (10 per second). Lines are never drawn across gaps in the data. Colour shows the moment in the session; circles are markers; the highlighted point is the cursor from the Time view.</div>
+  </div>
+</section>
+
+<!-- ======================= SETTINGS ======================= -->
+<section class="scr" id="scr-settings">
+  <div class="panel cfg" id="cfg">
+    <div class="ph">Device settings<span class="sp"></span><span class="sub" id="cfg-sum">not connected</span></div>
+    <div class="pb">
+      <table class="grid kvt">
+        <tr><td>Saved advance correction</td><td class="v"><span id="cfg-trim">—</span> °</td></tr>
+        <tr><td>Relay baseline</td><td class="v"><span id="cfg-z">—</span></td></tr>
+        <tr><td>Baseline value</td><td class="v"><span id="cfg-ofs">—</span> V</td></tr>
+      </table>
+      <div class="frow">
+        <label for="trim-in">Advance correction (°)<small>−20 to +20 · added to the measured advance · stored on the device</small></label>
+        <div class="spin"><button type="button" class="tb bordered" id="trim-m" aria-label="Decrease 0.5°">−</button><input type="number" id="trim-in" min="-20" max="20" step="0.1" value="0" inputmode="decimal"><button type="button" class="tb bordered" id="trim-p" aria-label="Increase 0.5°">+</button></div>
+      </div>
+      <div class="acts">
+        <button type="button" class="tb primary" id="trim-w">Save correction</button>
+        <button type="button" class="tb bordered" id="trim-0">Set correction to 0°</button>
+        <span class="tsep"></span>
+        <button type="button" class="tb bordered" id="rz-set">Set relay baseline</button>
+        <button type="button" class="tb bordered" id="rz-clr">Clear relay baseline</button>
+      </div>
+      <div class="msg" id="cfg-msg"></div>
+      <div class="note">The relay baseline stores the normal voltage difference between the battery (KL30) and the ignition supply (KL15) of this car, caused by wiring and connectors. Set it with the ignition on, the engine off and nothing switching on or off. The device refuses if the ignition voltage is below 8 V, the voltages are not steady, or the difference is larger than 1.5 V. An ignition relay warning is shown when the difference rises more than 0.4 V above the baseline for 2 seconds.</div>
+      <div class="fr"><button type="button" class="tb bordered danger" id="cfg-fr"><svg class="i"><use href="#i-del"/></svg><span>Factory reset</span></button></div>
+    </div>
+  </div>
+  <div class="panel about"><div class="ph">Device</div><table class="grid kvt"><tr><td>Name</td><td class="v" id="dev-name">—</td></tr><tr><td>Information</td><td class="v" id="info">—</td></tr><tr><td>Last update</td><td class="v"><span data-f="updated">—</span></td></tr></table></div>
+</section>
+</div>
+
+<div class="mk-sheet" id="mk-sheet" hidden role="dialog" aria-label="Marker label">
+  <div class="h"><b id="mk-h">Marker</b><span id="mk-t"></span></div>
+  <div class="chips" id="mk-chips"><button type="button" data-l="acceleration">Acceleration</button><button type="button" data-l="deceleration">Deceleration</button><button type="button" data-l="idle">Idle</button><button type="button" data-l="start-up">Start-up</button><button type="button" data-l="engine off">Engine off</button><button type="button" data-l="+">Other…</button></div>
+  <div class="bar"><b id="mk-bar"></b></div>
+</div>
+
+<div class="statusbar">
+  <div><span class="led off" id="sb-led"></span><b id="sb-conn">Not connected</b></div>
+  <div class="only-desk">Device: <b id="sb-dev">—</b></div>
+  <div class="only-desk">Updates: <b id="sb-rate">—</b></div>
+  <div><svg class="i"><use href="#i-batt"/></svg><span class="only-desk">Battery:</span> <b id="sb-batt">—</b></div>
+  <div class="sp"></div>
+  <div id="sb-rec" class="sb-rec" hidden><span class="led bad"></span><b id="sb-rec-t"></b></div>
+  <div class="only-desk">Last update: <b data-f="updated">—</b></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var SERVICE = "6a7e1000-7e70-4a11-9e01-726577697265";
+  var TELEMETRY = "6a7e1001-7e70-4a11-9e01-726577697265";
+  var INFO = "6a7e1002-7e70-4a11-9e01-726577697265";
+  var SPARKCH = "6a7e1003-7e70-4a11-9e01-726577697265";   // v1: spark telemetry, 44 B (fw v0.6)
+  var CONFIG = "6a7e1004-7e70-4a11-9e01-726577697265";    // v1: config, write opcodes / read 10 B (fw v0.6)
+  var APP_VER = "v1 (fw v0.6)";
+  var MARKER = "jetronic-reader-viewer-rw";
+  var FLAG_STALLED = 1, FLAG_SNAPPED = 2, FLAG_ADV_VALID = 4, FLAG_RELAY = 8;
+  // 6a7e1003 flags
+  var SP_PEAK_SAT = 1, SP_BURN = 2, SP_DWELL = 4, SP_K15_SAT = 8, SP_K30_SAT = 16, SP_RELAY = 32, SP_ZEROED = 64, SP_FRESH = 128;
+  var SPLEN = 44, SP_STALE_MS = 1500;
+  var LATCH_MS = 10000;          // code lamps stay lit 10 s after last seen
+  var STALE_MS = 1000;           // no packet for >1 s -> PKT lamp
+  var VBAT_LO = 11.5, VBAT_HI = 14.8;
+  var HIST_MS = 10000;
+
+  var params = new URLSearchParams(location.search);
+  var DEMO = params.get("demo") === "1";
+  var clockOffset = 0;           // demo fast-forward shifts the clock
+  function nowMs() { return Date.now() + clockOffset; }
+
+  var root = document.documentElement;
+  var body = document.body;
+  var statusEl = document.getElementById("status");
+  var banner = document.getElementById("banner");
+  var errEl = document.getElementById("err");
+  var btn = document.getElementById("connect");
+  var btnLabel = document.getElementById("btn-label");
+  var btnSub = document.getElementById("btn-sub");
+  var device = null;
+  var charTelem = null, charSpark = null, charCfg = null;
+  var connected = false, everConnected = false;
+
+  root.setAttribute("data-page", MARKER);
+  root.setAttribute("data-app", "v1-fw0.6");
+
+  /* ---------------- appearance ---------------- */
+  root.setAttribute("data-theme", "pro");
+  var FONT = "Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif";
+
+  /* ---------------- status / errors (as v1) ---------------- */
+  function setStatus(text, kind) { statusEl.textContent = text; statusEl.className = kind || ""; }
+  function showErr(text) {
+    if (!text) { errEl.style.display = "none"; errEl.textContent = ""; return; }
+    errEl.style.display = "block"; errEl.textContent = text;
+  }
+  function setBtn(label, sub, disabled) {
+    btnLabel.textContent = label; btnSub.textContent = sub || ""; btn.disabled = !!disabled;
+  }
+  function fmt(n, digits) { if (!Number.isFinite(n)) return "—"; return n.toFixed(digits); }
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
+  function clock(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+  function setField(name, text) {
+    var els = document.querySelectorAll('[data-f="' + name + '"]');
+    for (var i = 0; i < els.length; i++) els[i].textContent = text;
+  }
+
+  /* ---------------- event log ---------------- */
+  var logItems = [];
+  function log(cls, text) {
+    logItems.unshift({ t: nowMs(), cls: cls || "", text: text });
+    if (logItems.length > 60) logItems.pop();
+    renderLog();
+  }
+  function renderLog() {
+    var el = document.getElementById("log"), h = "";
+    for (var i = 0; i < Math.min(8, logItems.length); i++) {
+      var it = logItems[i];
+      h += '<div class="' + it.cls + '"><span class="t">' + clock(new Date(it.t)) + "</span> " + esc(it.text) + "</div>";
+    }
+    el.innerHTML = h;
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------------- fault codes and signal checks ---------------- */
+  // ECU fault codes, shown by the KE-Jetronic ECU as a steady duty (snapped to a 10 % step).
+  var CODES = [
+    { c: 0,   tag: "Too rich",          amber: false, txt: "Control unit communication fault or mixture too rich. The duty signal is stuck high." },
+    { c: 10,  tag: "Throttle sensor 1", amber: false, txt: "Throttle position sensor 1 fault." },
+    { c: 20,  tag: "Throttle sensor 2", amber: false, txt: "Throttle position sensor 2 fault." },
+    { c: 30,  tag: "Coolant temp.",     amber: false, txt: "Coolant temperature sensor fault." },
+    { c: 40,  tag: "Airflow meter",     amber: false, txt: "Airflow meter (sensor plate potentiometer) fault." },
+    { c: 50,  tag: "Lambda sensor",     amber: true,  txt: "Lambda (oxygen) sensor fault. Normal for 3–4 minutes after a cold start, until the sensor warms up. Cars without a lambda sensor never show it." },
+    { c: 60,  tag: "Speed signal",      amber: false, txt: "Vehicle speed signal fault." },
+    { c: 70,  tag: "Crankshaft sensor", amber: true,  txt: "Crankshaft position sensor fault. Normal when the ignition is on and the engine is not running." },
+    { c: 80,  tag: "Intake air temp.",  amber: false, txt: "Intake air temperature sensor fault." },
+    { c: 95,  tag: "Throttle switch",   amber: false, txt: "Throttle microswitch fault." },
+    { c: 100, tag: "Too lean",          amber: false, txt: "Control unit communication fault, blown overvoltage protection fuse or mixture too lean. Also shown when the ignition is off or the signal wire is disconnected." }
+  ];
+  var CODE_BY = {}; CODES.forEach(function (k) { CODE_BY[k.c] = k; k.id = "E" + (k.c < 10 ? "0" : "") + k.c; k.seen = 0; k.first = 0; });
+  var SYS = [
+    { id: "BLE",    tag: "Connection" },
+    { id: "PKT",    tag: "Data" },
+    { id: "STALL",  tag: "Duty signal" },
+    { id: "ADV",    tag: "Ignition timing signal" },
+    { id: "SPARK",  tag: "Spark measurement" },
+    { id: "VBAT",   tag: "Battery voltage" },
+    { id: "RELAY",  tag: "Ignition relay" },
+    { id: "SNAP",   tag: "Code shown by control unit" },
+    { id: "SCREEN", tag: "Screen kept on" }
+  ];
+  var SYS_BY = {}; SYS.forEach(function (s) { SYS_BY[s.id] = s; });
+  var selected = null;
+  function svgIcon(n) { return '<svg class="i"><use href="#i-' + n + '"/></svg>'; }
+  (function buildLamps() {
+    var h = "";
+    CODES.forEach(function (k) {
+      h += '<button type="button" class="code off" data-l="' + k.id + '" title="' + esc(k.id + " – " + k.txt) + '"><span class="c"><span class="led off"></span>' + k.id + '<span class="sp"></span><span class="act"></span></span><span class="t">' + esc(k.tag) + "</span></button>";
+    });
+    document.getElementById("codes-strip").innerHTML = h;
+    h = "";
+    CODES.forEach(function (k) {
+      h += '<tr class="sel-row" data-l="' + k.id + '"><td class="code-id"><span class="led off"></span>' + k.id + '</td><td class="wrap">' + esc(k.txt.split(". ")[0].replace(/\.$/, "")) + '</td><td class="state"></td><td class="m seen"></td></tr>';
+    });
+    document.getElementById("codes-tab").innerHTML = h;
+    ["checks", "checks2"].forEach(function (id) {
+      var x = "";
+      SYS.forEach(function (s) { x += '<tr class="sel-row" data-l="' + s.id + '"><td>' + esc(s.tag) + '</td><td class="state"></td></tr>'; });
+      document.getElementById(id).innerHTML = x;
+    });
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-l]"); if (!b || b.closest("#mk-chips")) return;
+      if (!b.closest("#codes-strip, #codes-tab, #checks, #checks2")) return;
+      var id = b.getAttribute("data-l");
+      if (b.closest("#codes-strip, #checks")) { selected = id; go("codes"); renderLamps(); return; }
+      selected = selected === id ? null : id;
+      renderLamps();
+    });
+  })();
+
+  /* ---------------- telemetry state ---------------- */
+  var last = null;               // last parsed packet
+  var lastPktAt = 0, lastSeq = null;
+  var hist = [];                 // {t,duty,rpm,adv,vbat}
+  var pktBadAt = 0, pktBadLen = 0, seqGapAt = 0, seqGapN = 0, staleLogged = false;
+  var advInvalidN = 0;
+  var e95Since = 0, e95Min = 0, e95Max = 0;
+  var prev = { stall: false, vbat: false, adv: false, snap: false, relay: false, psat: false };
+  var sp = null, spAt = 0, spBytes = null, spBadAt = 0, spBadLen = 0, spLastSeq = null, spGapAt = 0;   // v1: last 6a7e1003 packet
+  var fwInfo = "", sparkAvail = null;   // sparkAvail: null = unknown, false = characteristic missing
+
+  // Codes are decoded from the LOW-time duty (negative duty), L = 100 − H.
+  function decodeCode(p, t) {
+    var d = p.duty;                       // duty_low_pct
+    if (p.flags & FLAG_STALLED) {
+      // DuCy held constant (no edge for 3 s): firmware reports the pin level (v0.3 behaviour)
+      //   pin HIGH -> H 100 / L 0   -> E00
+      //   pin LOW  -> H 0   / L 100 -> E100 (also ignition off; a disconnected input reads LOW via the divider to GND)
+      //   no valid cycle since boot -> H 0 / L 0 -> no signal, not a code
+      e95Since = 0;
+      if (p.dutyH + d < 50) return null;
+      if (d >= 99.5) return 100;
+      if (d <= 0.5) return 0;
+      return null;
+    }
+    if (p.flags & FLAG_SNAPPED) {
+      // firmware snaps DutyH to a 10 % step and sets L = 100 − H, so L is on the same steps
+      e95Since = 0;
+      var n = Math.round(d / 10) * 10;
+      if (Math.abs(d - n) <= 2.5) return n;
+      return null;
+    }
+    // E95 = L 95 % (H 5 %): firmware never snaps it (5 % rounds to 10 %, outside its ±2 %),
+    // so detect it here: L within 95 ± 2.5 %, spread ≤ 1 %, for 3 s.
+    if (Math.abs(d - 95) <= 2.5) {
+      if (!e95Since || d < e95Min - 1e-9 && e95Max - d > 1 || d > e95Max + 1e-9 && d - e95Min > 1) { e95Since = t; e95Min = e95Max = d; }
+      e95Min = Math.min(e95Min, d); e95Max = Math.max(e95Max, d);
+      if (t - e95Since >= 3000) return 95;
+    } else e95Since = 0;
+    return null;
+  }
+
+  function onPacket(value) {
+    var len = value ? value.byteLength : 0;
+    var t = nowMs();
+    if (len !== 34) {
+      showErr("The device sent data this page cannot read (" + len + " bytes). The device software may need an update.");
+      pktBadAt = t; pktBadLen = len;
+      log("e", "Unreadable data received (" + len + " bytes)");
+      return;
+    }
+    showErr("");
+    var copy = new Uint8Array(34);
+    copy.set(new Uint8Array(value.buffer, value.byteOffset || 0, 34));
+    var v = new DataView(copy.buffer);
+    var p = {
+      // Jetronic DuCy is read in NEGATIVE duty: the LOW-time % (duty_low_pct, offset 4) is the primary value
+      dutyH: v.getFloat32(0, true), duty: v.getFloat32(4, true), dutyNeg: v.getFloat32(8, true),
+      rpm: v.getFloat32(12, true), adv: v.getFloat32(16, true), advUs: v.getInt32(20, true),
+      vbat: v.getFloat32(24, true), vdd: v.getFloat32(28, true), flags: v.getUint8(32), seq: v.getUint8(33), t: t
+    };
+    if (lastSeq !== null) {
+      var gap = (p.seq - lastSeq - 1 + 256) & 255;
+      if (gap > 0 && gap < 200) { seqGapAt = t; seqGapN = gap; log("w", "Data gap: " + gap + " update" + (gap > 1 ? "s" : "") + " missed"); }
+    }
+    lastSeq = p.seq; lastPktAt = t; last = p;
+    if (staleLogged) { staleLogged = false; log("g", "Data resumed"); }
+
+    hist.push({ t: t, duty: p.duty, rpm: p.rpm, adv: p.adv, vbat: p.vbat });
+    while (hist.length && hist[0].t < t - HIST_MS - 1500) hist.shift();
+
+    var code = decodeCode(p, t);
+    if (code !== null) {
+      var k = CODE_BY[code];
+      if (k) {
+        if (!k.seen || t - k.seen > LATCH_MS) { k.first = t; log(k.amber ? "w" : "e", "Fault code " + k.id + " · " + k.tag); }
+        k.seen = t;
+      } else if (!prev.unk || t - prev.unk > LATCH_MS) { prev.unk = t; log("w", "Steady duty cycle of " + code + " % · not a known fault code"); }
+    }
+    advInvalidN = (!(p.flags & FLAG_ADV_VALID) && p.rpm > 0) ? advInvalidN + 1 : 0;
+
+    var stall = !!(p.flags & FLAG_STALLED);
+    if (stall !== prev.stall) { log(stall ? "e" : "g", stall ? "Duty signal stuck · " + (p.dutyH + p.duty < 50 ? "no signal" : p.duty <= 0.5 ? "held high" : p.duty >= 99.5 ? "held low" : "stuck") : "Duty signal back"); prev.stall = stall; }
+    var vb = p.vbat < VBAT_LO || p.vbat > VBAT_HI;
+    if (vb && !prev.vbat) log("w", "Battery voltage " + fmt(p.vbat, 2) + " V is outside " + VBAT_LO + "–" + VBAT_HI + " V");
+    var rl = !!(p.flags & FLAG_RELAY);
+    if (rl !== prev.relay) { log(rl ? "e" : "g", rl ? "Ignition relay warning · voltage drop " + (sp ? fmt(sp.rdrop, 2) + " V" : "") + " above 0.4 V for 2 s" : "Ignition relay normal again"); prev.relay = rl; }
+    prev.vbat = vb;
+    var av = advInvalidN >= 3;
+    if (av && !prev.adv) log("w", "Ignition timing not measured · no ignition pulse while the engine turns");
+    prev.adv = av;
+
+    p.noSig = (p.flags & FLAG_STALLED) && p.dutyH + p.duty < 50;   // stalled before any valid DuCy cycle: firmware sends H = L = 0
+    setField("duty", p.noSig ? "—" : fmt(p.duty, 1));
+    var errOn = false;
+    for (var ei = 0; ei < CODES.length; ei++) { var ek = CODES[ei]; if (ek.seen && t - ek.seen <= LATCH_MS) { errOn = true; break; } }
+    setField("errst", p.noSig ? "—" : (errOn ? "Error present" : "No errors"));
+    setField("rpm", fmt(p.rpm, 0));
+    setField("adv", fmt(p.adv, 1));
+    setField("vbat", fmt(p.vbat, 2));
+    setField("vdd", fmt(p.vdd, 2));
+    if (!spFresh(t)) { setField("kl15", fmt(p.vdd, 2)); setField("kl30", fmt(p.vbat, 2)); }
+    renderIgn(t);
+    setField("seq", String(p.seq));
+    setField("updated", clock(new Date(t)));
+    proOnPacket(p);
+    recPush(copy, t, code, p);   // V5: REC (no-op when not recording)
+    render(false);
+  }
+
+
+  /* ---------------- v1: 6a7e1003 spark telemetry (44 B) ---------------- */
+  function spFresh(t) { return !!sp && t - spAt <= SP_STALE_MS; }
+  function parseSpark(v) {
+    var f = v.getUint8(1);
+    return {
+      proto: v.getUint8(0), f: f, dutyRaw: v.getFloat32(2, true), burnV: v.getFloat32(6, true), burnMs: v.getFloat32(10, true),
+      dwell: v.getFloat32(14, true), peak: v.getFloat32(18, true), kl15: v.getFloat32(22, true), kl30: v.getFloat32(26, true),
+      trim: v.getFloat32(30, true), cnt: v.getUint32(34, true), rdrop: v.getFloat32(38, true), adc: v.getUint8(42), seq: v.getUint8(43)
+    };
+  }
+  function onSpark(value) {
+    var len = value ? value.byteLength : 0, t = nowMs();
+    if (len !== SPLEN) { if (t - spBadAt > 3000) log("e", "Unreadable spark data (" + len + " bytes)"); spBadAt = t; spBadLen = len; return; }
+    var copy = new Uint8Array(SPLEN);
+    copy.set(new Uint8Array(value.buffer, value.byteOffset || 0, SPLEN));
+    var q = parseSpark(new DataView(copy.buffer));
+    if (q.proto !== 1) { if (t - spBadAt > 3000) log("w", "Spark data in an unknown format (" + q.proto + ")"); spBadAt = t; spBadLen = len; }
+    if (spLastSeq !== null && ((q.seq - spLastSeq - 1 + 256) & 255) > 0 && ((q.seq - spLastSeq - 1 + 256) & 255) < 200) spGapAt = t;
+    spLastSeq = q.seq;
+    var ps = !!(q.f & SP_PEAK_SAT) && !!(q.f & SP_FRESH);
+    if (ps && !prev.psat) log("w", "Spark peak above the measuring range · the real peak is higher");
+    prev.psat = ps;
+    sp = q; spAt = t; spBytes = copy; sparkAvail = true;
+    proOnSpark(q);
+    var fr = !!(q.f & SP_FRESH);
+    setField("kl15", fmt(q.kl15, 2) + (q.f & SP_K15_SAT ? "+" : ""));
+    setField("kl30", fmt(q.kl30, 2) + (q.f & SP_K30_SAT ? "+" : ""));
+    setField("burnv", fr && q.f & SP_BURN ? fmt(q.burnV, 1) : "—");
+    setField("burnms", fr && q.f & SP_BURN ? fmt(q.burnMs, 2) : "—");
+    setField("dwell", fr && q.f & SP_DWELL ? fmt(q.dwell, 2) : "—");
+    setField("peak", fr ? (ps ? "≥" : "") + fmt(q.peak, 0) : "—");
+    setField("trim", (q.trim > 0 ? "+" : "") + fmt(q.trim, 1));
+    setField("scnt", thou(q.cnt));
+    renderIgn(t);
+  }
+  function onSparkEv(ev) { onSpark(ev.target.value); }
+  /* ---------------- lamp evaluation ---------------- */
+  function lampStates(t) {
+    var st = {};
+    var live = last && connected && t - lastPktAt <= STALE_MS;
+    var codeNow = null;
+    CODES.forEach(function (k) {
+      var on = k.seen && t - k.seen < LATCH_MS;
+      st[k.id] = on ? (k.amber ? "warn" : "bad") : "off";
+      if (on && t - k.seen < 400 && live) st[k.id] += " live";
+    });
+    st.SNAP = live && (last.flags & FLAG_SNAPPED) ? "info" : "off";
+    st.BLE = connected ? "ok" : (everConnected ? "bad" : "off");
+    if (!connected) st.PKT = "off";
+    else if (t - lastPktAt > STALE_MS || t - pktBadAt < 3000) st.PKT = "bad";
+    else if (t - seqGapAt < 5000) st.PKT = "warn";
+    else st.PKT = "off";
+    st.VBAT = live && (last.vbat < VBAT_LO || last.vbat > VBAT_HI) ? "warn" : "off";
+    st.STALL = live && (last.flags & FLAG_STALLED) ? "bad" : "off";
+    st.ADV = live && advInvalidN >= 3 ? "warn" : "off";
+    if (!connected && (RC.on || demoLost)) st.BLE = "warn";   // V5: auto-reconnect in progress
+    st.SCREEN = WL.state === "held" ? "ok" : WL.state === "unsupported" || WL.state === "refused" ? "warn" : "off";
+    st.RELAY = live && (last.flags & FLAG_RELAY) ? "bad live" : "off";
+    var sl = connected && spFresh(t);
+    if (!connected) st.SPARK = "off";
+    else if (sparkAvail === false || !sl && last) st.SPARK = "warn";
+    else if (sl && last && last.rpm > 0 && !(sp.f & SP_FRESH)) st.SPARK = "warn";
+    else if (sl && (sp.f & SP_FRESH) && (sp.f & SP_PEAK_SAT)) st.SPARK = "info";
+    else if (sl && (sp.f & SP_FRESH)) st.SPARK = "ok";
+    else st.SPARK = "off";
+    return st;
+  }
+  function ago(t, ref) {
+    var s = Math.max(0, Math.round((t - ref) / 1000));
+    return s < 1 ? "now" : s < 120 ? s + " s ago" : Math.round(s / 60) + " min ago";
+  }
+  var SYS_TXT = {
+    BLE: function () {
+      if (!connected && (RC.on || demoLost)) return "The connection was lost. Reconnecting to " + (userDevice && userDevice.name || "JetronicReader") + " automatically" + (RC.on ? " (attempt " + Math.max(1, RC.n) + ")" : "") + "." + (REC.on ? " The recording continues and the gap is marked." : "") + " Press Connect to choose the device yourself.";
+      return connected ? "Connected" + (device && device.name ? " to " + device.name : "") + "." : (everConnected ? "The connection was lost. Press Connect." : "Not connected. Press Connect and choose JetronicReader.");
+    },
+    PKT: function (t) {
+      if (!connected) return "No connection.";
+      if (!last || t - lastPktAt > STALE_MS) return last ? "No data received for " + Math.round((t - lastPktAt) / 100) / 10 + " s." : "No data received since connecting.";
+      if (t - pktBadAt < 3000) return "A damaged update was received and ignored.";
+      if (t - seqGapAt < 5000) return seqGapN + (seqGapN === 1 ? " update was" : " updates were") + " lost " + ago(t, seqGapAt) + ".";
+      return "Data is arriving normally, about 10 updates per second.";
+    },
+    VBAT: function () { return last ? "Battery (KL30) " + fmt(last.vbat, 2) + " V, normal range " + VBAT_LO + "–" + VBAT_HI + " V. Ignition (KL15) " + fmt(last.vdd, 2) + " V." : "No battery voltage received yet."; },
+    RELAY: function () {
+      if (!last) return "No data from the ignition relay yet.";
+      var dr = sp ? " Difference above the baseline: " + fmt(sp.rdrop, 2) + " V" + (sp.f & SP_ZEROED ? "." : " (no relay baseline set – see Device settings).") : "";
+      return last.flags & FLAG_RELAY ? "The ignition supply (KL15) is more than 0.4 V below the battery (KL30) for over 2 seconds. Check the ignition relay contacts, the ignition switch and the wiring." + dr : "The ignition relay is working normally." + dr;
+    },
+    SPARK: function (t) {
+      if (!connected) return "No connection.";
+      if (sparkAvail === false) return "This device does not send spark measurements. A device update is needed.";
+      if (!spFresh(t)) return sp ? "No spark measurements received for " + ((t - spAt) / 1000).toFixed(1) + " s." : "No spark measurements received since connecting.";
+      if (t - spBadAt < 3000) return "A damaged spark update was received and ignored.";
+      if (!(sp.f & SP_FRESH)) return last && last.rpm > 0 ? "The engine is running, but no spark was measured in the last second. Check the ignition sensing wire." : "No spark (engine not running).";
+      return "Spark measured. Peak " + (sp.f & SP_PEAK_SAT ? "at least " + fmt(sp.peak, 0) + " V (above the measuring range)" : fmt(sp.peak, 0) + " V") + ", burn " + (sp.f & SP_BURN ? fmt(sp.burnV, 1) + " V for " + fmt(sp.burnMs, 2) + " ms" : "not measured") + ", dwell " + (sp.f & SP_DWELL ? fmt(sp.dwell, 2) + " ms" : "not measured") + ". " + thou(sp.cnt) + " sparks counted.";
+    },
+    STALL: function () {
+      if (!last || !(last.flags & FLAG_STALLED)) return last ? "The duty signal from the control unit is present." : "No data yet.";
+      if (last.noSig) return "No duty signal has been received since the device started. Check the signal wire.";
+      return "The duty signal has not changed for 3 seconds. It is stuck " + (last.duty <= 0.5 ? "high (shown as code E00)." : last.duty >= 99.5 ? "low (shown as code E100: ignition off or wire disconnected)." : "at " + fmt(last.duty, 0) + " %.");
+    },
+    ADV: function () { return advInvalidN >= 3 ? "The engine is running, but the ignition timing cannot be measured. Pulses from the ignition or the timing sensor are missing, or the advance is outside 0–60°." : last && last.flags & FLAG_ADV_VALID ? "Ignition advance " + fmt(last.adv, 1) + "°" + (sp ? ", including a correction of " + fmt(sp.trim, 1) + "°" : "") + "." : "No ignition timing measured (engine not running)."; },
+    SCREEN: function () {
+      if (WL.state === "held") return "The screen is kept on while this page is open and visible.";
+      if (WL.state === "unsupported") return "This browser cannot keep the screen on. If the screen turns off, the connection and the recording stop. Set the screen timeout to 10 minutes or more.";
+      if (WL.state === "refused") return "The browser refused to keep the screen on. It will try again on your next tap.";
+      return "The page is in the background, so the screen is not kept on. This comes back when you return.";
+    },
+    SNAP: function () { return last && (last.flags & FLAG_SNAPPED) ? "The control unit is showing a fault code: the duty has been steady at " + fmt(last.duty, 0) + " % for 3 seconds." : "The control unit is not showing a fault code."; }
+  };
+  var SYS_SHORT = {
+    BLE: { ok: "Connected", warn: "Reconnecting…", bad: "Lost", off: "Not connected" },
+    PKT: { ok: "Normal", warn: "Some updates lost", bad: "No data", off: "—" },
+    STALL: { ok: "Present", bad: "No signal", off: "—" },
+    ADV: { ok: "Valid", warn: "Missing", off: "—" },
+    SPARK: { ok: "Measured", warn: "Not measured", info: "Above range", off: "—" },
+    VBAT: { ok: "Within range", warn: "Out of range", off: "—" },
+    RELAY: { ok: "Normal", bad: "Fault", off: "—" },
+    SNAP: { ok: "No", info: "Showing a code", off: "—" },
+    SCREEN: { ok: "On", warn: "Cannot keep on", off: "Released" }
+  };
+  // promote "off" (= no problem) to "ok" where live data proves the signal is fine
+  function sysView(id, st, t) {
+    var live = last && connected && t - lastPktAt <= STALE_MS, s = String(st || "off").split(" ")[0];
+    if (s === "off" && live) {
+      if (id === "PKT" || id === "VBAT" || id === "RELAY" || id === "SNAP") s = "ok";
+      else if (id === "STALL" && !last.noSig) s = "ok";
+      else if (id === "ADV" && last.rpm > 0 && (last.flags & FLAG_ADV_VALID)) s = "ok";
+    }
+    if (id === "STALL" && s === "bad" && last && !last.noSig) return { s: s, txt: "Stuck" };
+    return { s: s, txt: (SYS_SHORT[id] && SYS_SHORT[id][s]) || (s === "off" ? "—" : s) };
+  }
+  function renderLamps() {
+    var t = nowMs(), st = lampStates(t), active = [], newest = null;
+    CODES.forEach(function (k) { if (st[k.id] !== "off") { active.push(k); if (!newest || k.seen > newest.seen) newest = k; } });
+    // strip on the live screen
+    var cells = document.querySelectorAll("#codes-strip .code");
+    for (var i = 0; i < cells.length; i++) {
+      var id = cells[i].getAttribute("data-l"), s = String(st[id] || "off").split(" ")[0];
+      cells[i].className = "code " + s + (selected === id ? " sel" : "");
+      cells[i].querySelector(".led").className = "led " + s;
+      cells[i].querySelector(".act").textContent = s === "off" ? "" : "Active";
+    }
+    // code table
+    var rows = document.querySelectorAll("#codes-tab tr");
+    for (i = 0; i < rows.length; i++) {
+      var cid = rows[i].getAttribute("data-l"), k = null; CODES.forEach(function (c) { if (c.id === cid) k = c; });
+      var cs = String(st[cid] || "off").split(" ")[0];
+      rows[i].className = "sel-row" + (selected === cid ? " pick" : "") + (cs !== "off" ? " on-" + cs : "");
+      rows[i].querySelector(".led").className = "led " + cs;
+      var stTxt = cs !== "off" ? (k.amber ? "Active – see note" : "Active") : k.seen ? "Not active" : "Not seen";
+      setTxt(rows[i].querySelector(".state"), stTxt);
+      setTxt(rows[i].querySelector(".seen"), k.seen ? clock(new Date(k.seen)) + " (" + ago(t, k.seen) + ")" : "—");
+    }
+    // signal checks
+    ["checks", "checks2"].forEach(function (tid) {
+      var rr = document.getElementById(tid).querySelectorAll("tr");
+      for (var j = 0; j < rr.length; j++) {
+        var sid = rr[j].getAttribute("data-l"), v = sysView(sid, st[sid], t);
+        rr[j].className = "sel-row" + (selected === sid && tid === "checks2" ? " pick" : "");
+        var html = '<span class="st ' + v.s + '"><span class="led ' + v.s + '"></span>' + esc(v.txt) + "</span>";
+        var cell = rr[j].querySelector(".state"); if (cell._h !== html) { cell.innerHTML = html; cell._h = html; }
+      }
+    });
+    // summaries
+    var sumTxt, sumCls;
+    if (active.length) {
+      var amberOnly = active.every(function (k) { return k.amber; });
+      sumTxt = active.length === 1 ? "1 active: " + active[0].id + " " + active[0].tag : active.length + " active: " + active.map(function (k) { return k.id; }).join(", ");
+      sumCls = amberOnly ? "warn" : "bad";
+    } else { sumTxt = last ? "No active codes" : "—"; sumCls = last ? "ok" : "off"; }
+    ["lamp-sum", "lamp-sum2"].forEach(function (sid) {
+      var el = $(sid), html = '<span class="led ' + sumCls + '"></span>' + esc(sumTxt);
+      if (el._h !== html) { el.innerHTML = html; el._h = html; el.className = "st " + sumCls; }
+    });
+    var badge = $("tab-badge"); badge.hidden = !active.length; badge.textContent = active.length; badge.className = "tbadge " + sumCls;
+    var al = $("code-alert");
+    if (active.length) {
+      var k0 = newest, note = k0.amber ? k0.txt.split(". ").slice(1).join(". ") : "Select Codes for details.";
+      var ah = '<div class="al ' + (k0.amber ? "warn" : "bad") + '">' + svgIcon("warn") + "<div><b>" + (active.length === 1 ? "Fault code active: " : active.length + " fault codes active, newest: ") + k0.id + " " + esc(k0.tag) + "</b>" + esc(note) + "</div></div>";
+      if (al._h !== ah) { al.innerHTML = ah; al._h = ah; }
+      al.hidden = false;
+    } else al.hidden = true;
+    // detail box
+    var d = "", sel = selected;
+    if (!sel && newest) sel = newest.id;
+    var kk = null; CODES.forEach(function (c) { if (c.id === sel) kk = c; });
+    if (kk) {
+      d = "<b>" + kk.id + " · " + esc(kk.tag) + "</b><p>" + esc(kk.txt) + "</p>";
+      if (kk.c === 70 && last && last.rpm === 0) d += "<p><i>The engine is not running now.</i></p>";
+      d += '<p class="when">' + (kk.seen ? "Last shown " + ago(t, kk.seen) + " (" + clock(new Date(kk.seen)) + ")." : "Not shown since this page was opened.") + "</p>";
+    } else if (sel && SYS_TXT[sel]) {
+      d = "<b>" + esc(SYS_BY[sel] ? SYS_BY[sel].tag : sel) + "</b><p>" + esc(SYS_TXT[sel](t)) + "</p>";
+    } else {
+      d = last ? "<p>No fault codes. Select a code or a signal check for details.</p>" : "<p>Select a code or a signal check for details. Codes appear once the device is connected.</p>";
+    }
+    var de = $("detail"); if (de._h !== d) { de.innerHTML = d; de._h = d; }
+  }
+  function setTxt(el, s) { if (el && el.textContent !== s) el.textContent = s; }
+
+  /* ======================= Workshop UI: dials, measured values, trend, toolbar ======================= */
+  var DIALS = [
+    { id: "rpm", h: "Engine speed", u: "rpm", min: 0, max: 7000, major: 1000, minor: 5, fmt: function (v) { return v / 1000; }, zones: [[6000, 7000, "#c62828"]], title: "rpm × 1000", dec: 0 },
+    { id: "duty", h: "Duty cycle", u: "%", min: 0, max: 100, major: 10, minor: 5, labelEvery: 2, zones: [[0, 10, "#d98e04"], [90, 100, "#d98e04"]], title: "%", dec: 1 },
+    { id: "adv", h: "Ignition advance", u: "°", uh: "degrees", min: 0, max: 50, major: 5, minor: 5, labelEvery: 2, title: "degrees", dec: 1 },
+    { id: "kl30", h: "Battery voltage", u: "V", min: 8, max: 16, major: 1, minor: 5, zones: [[8, 11, "#c62828"], [11, 11.5, "#d98e04"], [11.5, 14.8, "#2e7d32"], [14.8, 15.4, "#d98e04"], [15.4, 16, "#c62828"]], title: "volts", dec: 2 }
+  ];
+  function dialFace(o) {
+    var S = 200, cx = 100, cy = 100, R = 97, r0 = R - 9, a0 = 135, sw = 270;
+    function pt(r, a) { var t = a * Math.PI / 180; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; }
+    function f2(n) { return n.toFixed(2); }
+    function arc(r, a1, a2) { var p = pt(r, a1), q = pt(r, a2); return "M" + f2(p[0]) + " " + f2(p[1]) + "A" + r + " " + r + " 0 " + ((a2 - a1) > 180 ? 1 : 0) + " 1 " + f2(q[0]) + " " + f2(q[1]); }
+    var A = function (v) { return a0 + (Math.max(o.min, Math.min(o.max, v)) - o.min) / (o.max - o.min) * sw; };
+    o.A = A;
+    var s = ['<svg viewBox="0 0 ' + S + " " + S + '" font-family="' + FONT + '" role="img" aria-label="' + o.h + '">'];
+    s.push('<circle cx="100" cy="100" r="' + R + '" fill="#fff" stroke="#9aa2ac"/><circle cx="100" cy="100" r="' + (R - 3) + '" fill="none" stroke="#e1e4e8"/>');
+    (o.zones || []).forEach(function (z) { s.push('<path d="' + arc(r0 - 2.5, A(z[0]), A(z[1])) + '" fill="none" stroke="' + z[2] + '" stroke-width="5"/>'); });
+    s.push('<path d="' + arc(r0, a0, a0 + sw) + '" fill="none" stroke="#2a2f36"/>');
+    var fs = 12, step = o.major / o.minor, nt = Math.round((o.max - o.min) / step);
+    for (var i = 0; i <= nt; i++) {
+      var v = o.min + i * step, maj = i % o.minor === 0, half = !maj && o.minor % 2 === 0 && i % (o.minor / 2) === 0;
+      var len = maj ? 13 : half ? 9 : 6, a = A(v), p = pt(r0, a), q = pt(r0 - len, a);
+      s.push('<line x1="' + f2(p[0]) + '" y1="' + f2(p[1]) + '" x2="' + f2(q[0]) + '" y2="' + f2(q[1]) + '" stroke="#1d232b" stroke-width="' + (maj ? 1.8 : 1) + '"/>');
+      if (maj && Math.round((v - o.min) / o.major) % (o.labelEvery || 1) === 0) {
+        var tp = pt(r0 - len - fs * 0.95, a);
+        s.push('<text x="' + f2(tp[0]) + '" y="' + f2(tp[1] + fs * 0.36) + '" font-size="' + fs + '" text-anchor="middle" fill="#1d232b">' + (o.fmt ? o.fmt(v) : +v.toFixed(3)) + "</text>");
+      }
+    }
+    s.push('<text x="100" y="160" font-size="10.5" text-anchor="middle" fill="#5d6672">' + o.title + "</text>");
+    s.push('<g class="needle" style="transform-origin:100px 100px;transform:rotate(' + a0 + 'deg)"><polygon points="85,0 0,-4.4 -18,0 0,4.4" transform="translate(100 100)" fill="#1d232b"/></g>');
+    s.push('<circle cx="100" cy="100" r="9" fill="#3a414b"/><circle cx="100" cy="100" r="3" fill="#c9ced4"/></svg>');
+    return s.join("");
+  }
+  (function buildDials() {
+    $("gauges").innerHTML = DIALS.map(function (o) {
+      return '<div class="panel dial" id="dl-' + o.id + '"><div class="ph">' + o.h + '<span class="sp"></span><span class="sub">' + (o.uh || o.u) + '</span></div><div class="pb">' +
+        '<div class="face">' + dialFace(o) + '</div><div class="ro-box"><b class="num">—</b><span>' + o.u + '</span></div>' +
+        '<div class="gfoot"><span>Min <b class="num mn">—</b></span><span>Max <b class="num mx">—</b></span></div></div></div>';
+    }).join("");
+    DIALS.forEach(function (o) { var el = $("dl-" + o.id); o.nd = el.querySelector(".needle"); o.vb = el.querySelector(".ro-box b"); o.mn = el.querySelector(".mn"); o.mx = el.querySelector(".mx"); o.last = null; });
+  })();
+
+  /* min / max since connected */
+  var MM = {};
+  function mmUpd(k, v) { if (!Number.isFinite(v)) return; var m = MM[k]; if (!m) MM[k] = [v, v]; else { if (v < m[0]) m[0] = v; if (v > m[1]) m[1] = v; } }
+  function mmReset() { MM = {}; proValues(nowMs()); }
+  $("mm-reset").addEventListener("click", mmReset);
+
+  /* trend buffer: 5 minutes at 10 updates per second */
+  var TR = [], TR_KEEP = 300000;
+  function proOnPacket(p) {
+    var t = p.t, fr = spFresh(t) && sp, f = fr && (sp.f & SP_FRESH);
+    var row = { t: t, rpm: p.rpm, duty: p.noSig ? NaN : p.duty, adv: (p.flags & FLAG_ADV_VALID) ? p.adv : NaN,
+      k30: fr ? sp.kl30 : p.vbat, k15: fr ? sp.kl15 : p.vdd, bms: f && (sp.f & SP_BURN) ? sp.burnMs : NaN, dw: f && (sp.f & SP_DWELL) ? sp.dwell : NaN };
+    TR.push(row);
+    while (TR.length && TR[0].t < t - TR_KEEP) TR.shift();
+    mmUpd("rpm", p.rpm); if (!p.noSig) mmUpd("duty", p.duty); if (p.flags & FLAG_ADV_VALID) mmUpd("adv", p.adv);
+    if (!fr) { mmUpd("kl30", p.vbat); mmUpd("kl15", p.vdd); }
+  }
+  function proOnSpark(q) {
+    mmUpd("kl30", q.kl30); mmUpd("kl15", q.kl15);
+    if (q.f & SP_FRESH) {
+      if (q.f & SP_BURN) { mmUpd("burnv", q.burnV); mmUpd("burnms", q.burnMs); }
+      if (q.f & SP_DWELL) mmUpd("dwell", q.dwell);
+      mmUpd("peak", q.peak);
+    }
+    if (q.kl15 > 1) mmUpd("rdrop", q.rdrop);
+    setField("rdrop", (q.rdrop >= 0 ? "+" : "") + fmt(q.rdrop, 2));
+  }
+
+  function dialVal(o, t) {
+    var live = last && connected && t - lastPktAt <= STALE_MS;
+    if (!live) return NaN;
+    if (o.id === "rpm") return last.rpm;
+    if (o.id === "duty") return last.noSig ? NaN : last.duty;
+    if (o.id === "adv") return (last.flags & FLAG_ADV_VALID) ? last.adv : NaN;
+    var q = spFresh(t) ? sp : null;
+    return q && Number.isFinite(q.kl30) ? q.kl30 : last.vbat;
+  }
+  function proDials(t) {
+    DIALS.forEach(function (o) {
+      var v = dialVal(o, t), a = o.A(Number.isFinite(v) ? v : o.min), key = Number.isFinite(v) ? v.toFixed(o.dec) : "—";
+      if (o.last !== key) {
+        o.last = key;
+        o.nd.style.transform = "rotate(" + a.toFixed(2) + "deg)";
+        o.vb.textContent = Number.isFinite(v) ? (o.id === "rpm" ? thou(v) : v.toFixed(o.dec)) : "—";
+      }
+      var m = MM[o.id], fx = function (x) { return o.id === "rpm" ? thou(x) : x.toFixed(o.dec); };
+      setTxt(o.mn, m ? fx(m[0]) : "—"); setTxt(o.mx, m ? fx(m[1]) : "—");
+      var bad = Number.isFinite(v) && o.id === "kl30" && (v < VBAT_LO || v > VBAT_HI);
+      o.vb.parentNode.classList.toggle("warn", bad);
+    });
+  }
+
+  /* measured values table */
+  var VROWS = [
+    { g: "Engine" },
+    { k: "rpm", lab: "Engine speed", f: "rpm", u: "rpm", d: 0 },
+    { k: "duty", lab: "Duty cycle", f: "duty", u: "%", d: 1 },
+    { k: "adv", lab: "Ignition advance", f: "adv", u: "°", d: 1 },
+    { k: "trim", lab: "Advance correction", f: "trim", u: "°", d: 1, nomm: true },
+    { g: "Supply" },
+    { k: "kl30", lab: "Battery (KL30)", f: "kl30", u: "V", d: 2 },
+    { k: "kl15", lab: "Ignition (KL15)", f: "kl15", u: "V", d: 2 },
+    { k: "rdrop", lab: "Relay drop above baseline", f: "rdrop", u: "V", d: 2 },
+    { g: "Spark" },
+    { k: "burnv", lab: "Burn voltage", f: "burnv", u: "V", d: 1 },
+    { k: "burnms", lab: "Burn time", f: "burnms", u: "ms", d: 2 },
+    { k: "dwell", lab: "Dwell time", f: "dwell", u: "ms", d: 2 },
+    { k: "peak", lab: "Spark peak", f: "peak", u: "V", d: 0 },
+    { k: "scnt", lab: "Sparks counted", f: "scnt", u: "", d: 0, nomm: true }
+  ];
+  (function buildVals() {
+    $("vals-body").innerHTML = VROWS.map(function (r) {
+      if (r.g) return '<tr class="grp"><td colspan="6">' + r.g + "</td></tr>";
+      return '<tr id="vr-' + r.k + '"><td>' + r.lab + '</td><td class="v"><span data-f="' + r.f + '">—</span></td><td class="u">' + r.u + '</td><td class="m mn">' + (r.nomm ? "" : "—") + '</td><td class="m mx">' + (r.nomm ? "" : "—") + '</td><td class="c-st"><span class="st off"><span class="led off"></span>—</span></td></tr>';
+    }).join("");
+    VROWS.forEach(function (r) { if (r.k) { var tr = $("vr-" + r.k); r.mn = tr.querySelector(".mn"); r.mx = tr.querySelector(".mx"); r.st = tr.querySelector(".c-st"); } });
+  })();
+  function vStat(k, t) {
+    var live = last && connected && t - lastPktAt <= STALE_MS, q = connected && spFresh(t) ? sp : null, fr = q && (q.f & SP_FRESH);
+    function volt(v, ignOff) {
+      if (!Number.isFinite(v)) return ["off", "—"];
+      if (ignOff && v < 8) return ["off", "Ignition off"];
+      if (v < 9) return ["bad", "Very low"]; if (v > 16) return ["bad", "Very high"];
+      if (v < VBAT_LO) return ["warn", "Low"]; if (v > VBAT_HI) return ["warn", "High"];
+      return ["ok", "Normal"];
+    }
+    switch (k) {
+      case "rpm": return !live ? ["off", "—"] : last.rpm > 0 ? ["ok", "Running"] : ["off", "Engine off"];
+      case "duty": return !live ? ["off", "—"] : last.noSig ? ["bad", "No signal"] : last.flags & FLAG_STALLED ? ["bad", "Stuck"] : last.flags & FLAG_SNAPPED ? ["warn", "Showing a code"] : ["ok", "Normal"];
+      case "adv": return !live ? ["off", "—"] : advInvalidN >= 3 ? ["warn", "Not measured"] : last.flags & FLAG_ADV_VALID ? ["ok", "Normal"] : ["off", "Engine off"];
+      case "trim": return q ? (Math.abs(q.trim) > 0.04 ? ["info", "Applied"] : ["off", "None"]) : ["off", "—"];
+      case "kl30": return live ? volt(q ? q.kl30 : last.vbat, false) : ["off", "—"];
+      case "kl15": return live ? volt(q ? q.kl15 : last.vdd, true) : ["off", "—"];
+      case "rdrop": return !live || !q ? ["off", "—"] : last.flags & FLAG_RELAY ? ["bad", "Relay fault"] : !(q.f & SP_ZEROED) ? ["info", "No baseline"] : ["ok", "Normal"];
+      case "burnv": case "burnms": return !q ? ["off", "—"] : fr && q.f & SP_BURN ? ["ok", "Measured"] : ["off", "No spark"];
+      case "dwell": return !q ? ["off", "—"] : fr && q.f & SP_DWELL ? ["ok", "Measured"] : ["off", "No spark"];
+      case "peak": return !q ? ["off", "—"] : fr && q.f & SP_PEAK_SAT ? ["info", "Above range"] : fr ? ["ok", "Measured"] : ["off", "No spark"];
+      case "scnt": return q ? ["off", ""] : ["off", "—"];
+    }
+    return ["off", "—"];
+  }
+  function proValues(t) {
+    VROWS.forEach(function (r) {
+      if (!r.k) return;
+      if (!r.nomm) { var m = MM[r.k], fx = function (x) { return r.k === "rpm" ? thou(x) : x.toFixed(r.d); }; setTxt(r.mn, m ? fx(m[0]) : "—"); setTxt(r.mx, m ? fx(m[1]) : "—"); }
+      var s = vStat(r.k, t), html = s[1] ? '<span class="st ' + s[0] + '"><span class="led ' + s[0] + '"></span>' + s[1] + "</span>" : "";
+      if (r.st._h !== html) { r.st.innerHTML = html; r.st._h = html; }
+    });
+    var pk = sp && connected && spFresh(t) && (sp.f & SP_FRESH) && (sp.f & SP_PEAK_SAT);
+    $("vr-peak").classList.toggle("sat", !!pk);
+  }
+
+  /* trend charts (SVG, never drawn across gaps in the data) */
+  var TRW = 60, TR_FROZEN = false, trLast = 0;
+  function trendSvg(W, H, t0, t1, rows, o) {
+    var pL = 58, pR = o.right ? 52 : 14, pT = 6, pB = o.axis ? 18 : 4, pw = W - pL - pR, ph = H - pT - pB;
+    if (pw < 20 || ph < 10) return "";
+    var X = function (t) { return pL + (t - t0) / (t1 - t0) * pw; };
+    var s = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '" font-family="' + FONT + '" font-size="11">'];
+    var nT = o.yTicks || 2, i;
+    for (i = 0; i <= nT; i++) { var y = pT + ph * i / nT; s.push('<line x1="' + pL + '" x2="' + (pL + pw) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="' + (i === nT ? "#9aa2ac" : "#e3e6ea") + '"/>'); }
+    var xs = o.win <= 10 ? 2 : o.win <= 60 ? 10 : 60;
+    for (var tv = Math.ceil((t0 - t1) / 1000 / xs) * xs; tv <= 0.001; tv += xs) {
+      var xx = X(t1 + tv * 1000);
+      s.push('<line x1="' + xx.toFixed(1) + '" x2="' + xx.toFixed(1) + '" y1="' + pT + '" y2="' + (pT + ph) + '" stroke="#eef0f2"/>');
+      if (o.axis) s.push('<text x="' + xx.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="' + (tv === 0 ? "end" : "middle") + '" fill="#5d6672">' + (tv === 0 ? "now" : (xs >= 60 ? Math.round(tv / 60) + " min" : Math.round(tv) + " s")) + "</text>");
+    }
+    s.push('<rect x="' + pL + '" y="' + pT + '" width="' + pw + '" height="' + ph + '" fill="none" stroke="#c5cad1"/>');
+    // gaps in the data
+    for (i = 1; i < rows.length; i++) if (rows[i].t - rows[i - 1].t > GAP_MS) { var g0 = Math.max(pL, X(rows[i - 1].t + 100)), g1 = Math.min(pL + pw, X(rows[i].t)); if (g1 > g0) s.push('<rect x="' + g0.toFixed(1) + '" y="' + pT + '" width="' + (g1 - g0).toFixed(1) + '" height="' + ph + '" fill="url(#trgap)"/>'); }
+    if (!connected && rows.length && t1 - rows[rows.length - 1].t > GAP_MS) { var gl = X(rows[rows.length - 1].t + 100); s.push('<rect x="' + gl.toFixed(1) + '" y="' + pT + '" width="' + Math.max(0, pL + pw - gl).toFixed(1) + '" height="' + ph + '" fill="url(#trgap)"/>'); }
+    s.push('<defs><pattern id="trgap" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#c62828" stroke-opacity=".35" stroke-width="1.5"/></pattern><clipPath id="trc' + o.cid + '"><rect x="' + pL + '" y="' + pT + '" width="' + pw + '" height="' + ph + '"/></clipPath></defs>');
+    o.lanes.forEach(function (L) {
+      if (L.axis) for (i = 0; i <= nT; i++) {
+        var yy = pT + ph * i / nT, v = L.max - (L.max - L.min) * i / nT, ax = L.axis === "l" ? pL - 6 : pL + pw + 6;
+        s.push('<text x="' + ax + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="' + (L.axis === "l" ? "end" : "start") + '" fill="' + L.color + '">' + L.fmt(v) + "</text>");
+      }
+      var d = "", pen = "M";
+      for (var j = 0; j < rows.length; j++) {
+        var r = rows[j], val = r[L.key];
+        if (j && r.t - rows[j - 1].t > GAP_MS) pen = "M";
+        if (!Number.isFinite(val)) { pen = "M"; continue; }
+        var py = pT + ph - (Math.max(L.min, Math.min(L.max, val)) - L.min) / (L.max - L.min) * ph;
+        d += pen + X(r.t).toFixed(1) + " " + py.toFixed(1); pen = "L";
+      }
+      s.push('<path d="' + d + '" fill="none" stroke="' + L.color + '" stroke-width="' + (L.w || 1.4) + '"' + (L.dash ? ' stroke-dasharray="' + L.dash + '"' : "") + ' stroke-linejoin="round" clip-path="url(#trc' + o.cid + ')"/>');
+    });
+    if (REC.on && REC.s) REC.s.marks.forEach(function (m) {
+      var mt = REC.s.start + m.t; if (mt < t0 || mt > t1) return; var x = X(mt);
+      s.push('<line x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + pT + '" y2="' + (pT + ph) + '" stroke="#3d4f66" stroke-dasharray="3 3"/>');
+      if (o.mlab) s.push('<text x="' + (x + 3).toFixed(1) + '" y="' + (pT + 11) + '" fill="#3d4f66" font-size="10.5" font-weight="600">' + esc(m.n + (m.l ? " " + m.l : "")) + "</text>");
+    });
+    s.push("</svg>");
+    return s.join("");
+  }
+  function autoRange(rows, keys, minSpan, floor) {
+    var mn = Infinity, mx = -Infinity;
+    rows.forEach(function (r) { keys.forEach(function (k) { var v = r[k]; if (Number.isFinite(v)) { if (v < mn) mn = v; if (v > mx) mx = v; } }); });
+    if (!Number.isFinite(mn)) return [floor || 0, (floor || 0) + minSpan];
+    var pad = Math.max((mx - mn) * 0.15, minSpan / 2 - (mx - mn) / 2);
+    mn -= pad; mx += pad; if (floor != null && mn < floor) { mx += floor - mn; mn = floor; }
+    var st = minSpan >= 5 ? 1 : 0.1; mn = Math.floor(mn / st) * st; mx = Math.ceil(mx / st) * st;
+    return [mn, mx];
+  }
+  function laneSpecs(rows, big) {
+    var rmax = 3000; rows.forEach(function (r) { if (r.rpm > rmax) rmax = r.rpm; }); rmax = Math.ceil(rmax / 1000) * 1000;
+    var ar = autoRange(rows, ["adv"], 10, 0), kr = autoRange(rows, ["k30", "k15"], 1, 0), sr = autoRange(rows, ["bms", "dw"], 2, 0);
+    var L = [
+      { lab: '<span><i style="border-color:#1f4e85"></i>Engine speed (rpm)</span><span><i style="border-color:#b45309"></i>Duty cycle (%)</span>', w: big ? 0.36 : 0.52, yTicks: 4, right: true,
+        lanes: [{ key: "rpm", color: "#1f4e85", min: 0, max: rmax, axis: "l", fmt: function (v) { return thou(v); } }, { key: "duty", color: "#b45309", min: 0, max: 100, axis: "r", fmt: function (v) { return Math.round(v) + " %"; }, w: 1.2 }] },
+      { lab: '<span><i style="border-color:#55702a"></i>Ignition advance (°)</span>', w: big ? 0.2 : 0.2,
+        lanes: [{ key: "adv", color: "#55702a", min: ar[0], max: ar[1], axis: "l", fmt: function (v) { return Math.round(v) + "°"; } }] },
+      { lab: '<span><i style="border-color:#3b4048"></i>Battery (KL30)</span><span><i class="d" style="border-color:#8a919a"></i>Ignition (KL15)</span>', w: big ? 0.22 : 0.28,
+        lanes: [{ key: "k30", color: "#3b4048", min: kr[0], max: kr[1], axis: "l", fmt: function (v) { return v.toFixed(1) + " V"; } }, { key: "k15", color: "#8a919a", min: kr[0], max: kr[1], dash: "4 3" }] }
+    ];
+    if (big) L.push({ lab: '<span><i style="border-color:#b45309"></i>Burn time (ms)</span><span><i class="d" style="border-color:#1f4e85"></i>Dwell time (ms)</span>', w: 0.22,
+      lanes: [{ key: "bms", color: "#b45309", min: sr[0], max: sr[1], axis: "l", fmt: function (v) { return v.toFixed(1) + " ms"; } }, { key: "dw", color: "#1f4e85", min: sr[0], max: sr[1], dash: "4 3" }] });
+    return L;
+  }
+  function drawTrend(host, win, big, t) {
+    var W = Math.floor(host.clientWidth), H = Math.floor(host.clientHeight);
+    if (W < 60 || H < 60) return;
+    var t1 = t, t0 = t - win * 1000, i0 = 0;
+    while (i0 < TR.length && TR[i0].t < t0 - 200) i0++;
+    var rows = TR.slice(Math.max(0, i0 - 1));
+    var L = laneSpecs(rows, big), legH = 19, axisH = 18, avail = H - L.length * legH - axisH - 2, h = "";
+    L.forEach(function (l, i) {
+      var last = i === L.length - 1;
+      h += '<div class="legend lg-row">' + l.lab + "</div>" + trendSvg(W, Math.max(30, Math.round(avail * l.w)) + (last ? axisH : 0), t0, t1, rows, { lanes: l.lanes, axis: last, right: true, yTicks: l.yTicks || 2, win: win, cid: (big ? "b" : "s") + i, mlab: big && i === 0 });
+    });
+    if (!TR.length) h += '<div class="trend-empty">' + (connected ? "Waiting for data…" : "Connect to the device to see live values.") + "</div>";
+    host.innerHTML = h;
+  }
+  function proTrend(t, force) {
+    if (TR_FROZEN && !force) return;
+    if (!force && t - trLast < 480) return;
+    trLast = t;
+    var tt = TR_FROZEN && TR.length ? TR[TR.length - 1].t : t;
+    if (SCREEN === "live" && window.innerWidth >= 900) drawTrend($("live-trend"), 60, false, tt);
+    else if (SCREEN === "trend") drawTrend($("trend-big"), TRW, true, tt);
+  }
+  $("tr-win").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-w]"); if (!b) return;
+    TRW = +b.getAttribute("data-w");
+    var bs = $("tr-win").querySelectorAll("button"); for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("on", bs[i] === b);
+    proTrend(nowMs(), true);
+  });
+  $("tr-freeze").addEventListener("click", function () {
+    TR_FROZEN = !TR_FROZEN;
+    $("tr-freeze").classList.toggle("on", TR_FROZEN);
+    $("tr-freeze").querySelector("span").textContent = TR_FROZEN ? "Resume" : "Freeze";
+    $("tr-freeze").querySelector("use").setAttribute("href", TR_FROZEN ? "#i-play" : "#i-pause");
+    proTrend(nowMs(), true);
+  });
+  window.addEventListener("resize", function () { proTrend(nowMs(), true); });
+
+  /* toolbar, title bar and status bar */
+  $("tb-rec").addEventListener("click", function () { if (!REC.on) recStart(); });
+  $("tb-mk").addEventListener("click", function () { recMarker(); });
+  $("tb-stop").addEventListener("click", function () { recStop(); });
+  $("tb-settings-ph").addEventListener("click", function () { go("settings"); });
+  $("tb-help").addEventListener("click", function () { var h = $("hint"); h.classList.toggle("force"); if (SCREEN !== "live") go("live"); });
+  function proChrome(t) {
+    var st = connected ? "ok" : (RC.on || demoLost) ? "warn" : everConnected ? "bad" : "off";
+    ["conn-led", "sb-led"].forEach(function (id) { var e = $(id); var c = "led " + st; if (e.className !== c) e.className = c; });
+    setTxt($("sb-conn"), connected ? "Connected" : (RC.on || demoLost) ? "Reconnecting…" : everConnected ? "Disconnected" : "Not connected");
+    setTxt($("sb-dev"), device && device.name ? device.name : userDevice && userDevice.name ? userDevice.name : "—");
+    setTxt($("dev-name"), device && device.name ? device.name : "—");
+    var n = 0; for (var i = TR.length - 1; i >= 0 && TR[i].t > t - 2000; i--) n++;
+    setTxt($("sb-rate"), connected && n ? Math.round(n / 2) + " / s" : "—");
+    var live = last && connected && t - lastPktAt <= STALE_MS, q = connected && spFresh(t) ? sp : null;
+    setTxt($("sb-batt"), live ? fmt(q ? q.kl30 : last.vbat, 2) + " V" : "—");
+    var c = $("connect");
+    c.classList.toggle("primary", !connected && !btn.disabled);
+    c.classList.toggle("bordered", true);
+    var r = $("tb-rec");
+    r.classList.toggle("rec-on", REC.on);
+    setTxt($("tb-rec-l"), REC.on ? "Recording " + hms((t - REC.s.start) / 1000) : "Record");
+    r.disabled = !db;
+    $("tb-mk").disabled = !REC.on; $("tb-stop").disabled = !REC.on;
+    $("sb-rec").hidden = !REC.on; if (REC.on) setTxt($("sb-rec-t"), "Recording " + hms((t - REC.s.start) / 1000));
+    $("hint").hidden = !($("hint").classList.contains("force") || !connected && !everConnected && !DEMO);
+  }
+
+  function renderIgn(t) { proValues(t || nowMs()); }
+
+  /* ---------------- render loop ---------------- */
+  function render(full) {
+    var t = nowMs();
+    proDials(t);
+    renderLamps();
+    if (full) { proValues(t); proChrome(t); proTrend(t, true); }
+  }
+  setInterval(function () {
+    var t = nowMs();
+    if (connected && last && t - lastPktAt > STALE_MS && !staleLogged) { staleLogged = true; log("e", "No data for more than 1 second"); }
+    renderLamps();
+    proDials(t);
+    proChrome(t);
+    proTrend(t, false);
+  }, 250);
+
+  function setConnectedUi(on) {
+    connected = on;
+    body.classList.toggle("on", on);
+    body.classList.toggle("off", !on);
+    if (on) everConnected = true;
+    renderLamps();
+  }
+
+  /* ---------------- Web Bluetooth (logic as v1) ---------------- */
+  var userDevice = null, lostAt = 0, demoLost = 0;
+  var RC = { on: false, n: 0, timer: 0, gen: 0, att: 0 }, RC_DELAYS = [500, 1000, 2000, 4000, 8000, 15000], RC_MAX_IDLE = 10;
+  function disconnectUi() {
+    charTelem = null; charSpark = null; charCfg = null; spLastSeq = null;
+    device = null;
+    setStatus("Disconnected", "bad");
+    setBtn("Connect", "Search for JetronicReader", false);
+    lastSeq = null;
+    setConnectedUi(false);
+    log("e", "Disconnected");
+    renderCfg(); renderIgn();
+  }
+
+  function noBluetooth() {
+    banner.style.display = "block";
+    banner.textContent = "Web Bluetooth is not available. Open this page in Chrome on Android (not Firefox, and not an in-app browser).";
+  }
+
+  // V5: the GATT steps are exactly V4's connect(), factored out so the same steps run on auto-reconnect.
+  function onTelemEv(ev) { onPacket(ev.target.value); }   // single named handler: addEventListener de-duplicates it
+  async function setupGatt(dev, re, att) {
+    var stale = function () { if (re && att !== RC.att) throw new Error("attempt superseded"); };
+    setStatus(re ? "Reconnecting… (" + RC.n + ")" : "Connecting…", "");
+    var server = await dev.gatt.connect(); stale();
+    var service = await server.getPrimaryService(SERVICE); stale();
+    var ch = await service.getCharacteristic(TELEMETRY); stale();
+    await ch.startNotifications(); stale();
+    if (charTelem && charTelem !== ch) charTelem.removeEventListener("characteristicvaluechanged", onTelemEv);
+    ch.addEventListener("characteristicvaluechanged", onTelemEv);
+    charTelem = ch; device = dev;
+    lastSeq = null; lastPktAt = nowMs();
+    setConnectedUi(true);
+    try {
+      var initial = await charTelem.readValue();
+      onPacket(initial);
+    } catch (e) { /* notify-only is fine */ }
+    try {
+      var info = await service.getCharacteristic(INFO);
+      var infoVal = await info.readValue();
+      var bytes = new Uint8Array(infoVal.buffer, infoVal.byteOffset, infoVal.byteLength);
+      var text = "";
+      var printable = true;
+      for (var i = 0; i < bytes.length; i++) {
+        var c = bytes[i];
+        if (c === 0) break;
+        if (c < 32 || c > 126) { printable = false; break; }
+        text += String.fromCharCode(c);
+      }
+      document.getElementById("info").textContent = printable && text
+        ? text
+        : (bytes.length ? "info " + bytes.length + " B" : "");
+    } catch (e) {
+      document.getElementById("info").textContent = "";
+    }
+    fwInfo = document.getElementById("info").textContent;
+    if (fwInfo && fwInfo.indexOf("v0.6") < 0) log("w", "Device software “" + fwInfo + "” may be too old for this page");
+    await setupV1(service, re, att); stale();
+    setStatus("Connected" + (dev.name ? " · " + dev.name : ""), "ok");
+    setBtn("Connected", (dev.name || "JetronicReader") + " · receiving data", true);
+    if (!re) log("g", "Connected" + (dev.name ? " · " + dev.name : ""));
+  }
+
+  // v1: optional fw v0.6 characteristics; missing ones are reported, never fatal
+  async function setupV1(service, re, att) {
+    try {
+      var ch = await service.getCharacteristic(SPARKCH);
+      await ch.startNotifications();
+      if (charSpark && charSpark !== ch) charSpark.removeEventListener("characteristicvaluechanged", onSparkEv);
+      ch.addEventListener("characteristicvaluechanged", onSparkEv);
+      charSpark = ch; sparkAvail = true; spLastSeq = null;
+      try { onSpark(await ch.readValue()); } catch (e) {}
+    } catch (e) {
+      charSpark = null; sparkAvail = false;
+      log("w", "Spark measurement is not available on this device (" + (e && e.name || "error") + ") · the device software may need an update");
+    }
+    try {
+      charCfg = await service.getCharacteristic(CONFIG);
+      await cfgRead();
+    } catch (e) {
+      charCfg = null; CFG.v = null;
+      if (!re) log("w", "Device settings are not available · the device software may need an update");
+    }
+    renderCfg(); renderIgn();
+  }
+
+  async function connect() {
+    cancelReconnect();
+    showErr("");
+    if (!navigator.bluetooth) {
+      noBluetooth();
+      btn.disabled = true;
+      return;
+    }
+    setBtn("Connecting…", "Pick JetronicReader from the list", true);
+    setStatus("Searching…", "");
+    var dev = null;
+    try {
+      dev = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: "Jetronic" },
+          { namePrefix: "JETRONIC" },
+          { namePrefix: "jetronic" }
+        ],
+        optionalServices: [SERVICE]
+      });
+      if (userDevice && userDevice !== dev) userDevice.removeEventListener("gattserverdisconnected", onGattDisconnected);
+      userDevice = dev;
+      dev.addEventListener("gattserverdisconnected", onGattDisconnected);
+      await setupGatt(dev, false, 0);
+      if (lostAt) bleRestored(false);
+    } catch (e) {
+      if (e && e.name === "NotFoundError") {
+        setStatus("Cancelled", "");
+      } else {
+        setStatus("Error", "bad");
+        showErr(e && e.message ? e.message : "Connection failed");
+      }
+      setBtn("Connect", "Search for JetronicReader", false);
+      setConnectedUi(false);
+      if (dev && dev.gatt && dev.gatt.connected) {
+        try { dev.gatt.disconnect(); } catch (ignore) {}
+      }
+    }
+  }
+
+  function onGattDisconnected(ev) {
+    if (ev && ev.target && userDevice && ev.target !== userDevice) return;
+    var was = connected;
+    disconnectUi();
+    if (was) { bleLost(); scheduleReconnect(); }
+  }
+  function bleLost() {
+    lostAt = nowMs();
+    log("e", REC.on ? "Connection lost · recording continues (the gap is marked), reconnecting…" : "Connection lost · reconnecting…");
+  }
+  function bleRestored(auto) {
+    var s = lostAt ? (nowMs() - lostAt) / 1000 : 0; lostAt = 0;
+    log("g", (auto ? "Auto-reconnected after " : "Reconnected after ") + s.toFixed(1) + " s" + (REC.on ? " · recording continues" : ""));
+  }
+  function scheduleReconnect() {
+    if (!userDevice || !userDevice.gatt || DEMO) return;
+    if (!RC.on) { RC.on = true; RC.n = 0; RC.gen++; body.classList.add("reconn"); }
+    if (!REC.on && RC.n >= RC_MAX_IDLE) { reconnectGiveUp(); return; }
+    var d = RC_DELAYS[Math.min(RC.n, RC_DELAYS.length - 1)], gen = RC.gen;
+    setStatus("Reconnecting in " + (d / 1000) + " s…", "bad");
+    setBtn("Reconnecting…", "Attempt " + (RC.n + 1) + " · press to choose the device", false);
+    renderLamps();
+    clearTimeout(RC.timer);
+    RC.timer = setTimeout(function () { attemptReconnect(gen); }, d);
+  }
+  async function attemptReconnect(gen) {
+    if (!RC.on || gen !== RC.gen) return;
+    RC.n++; var att = ++RC.att, to = 0;
+    try {
+      await Promise.race([setupGatt(userDevice, true, att), new Promise(function (_, rej) { to = setTimeout(function () { rej(new Error("timeout 12 s")); }, 12000); })]);
+      clearTimeout(to);
+      if (gen !== RC.gen) return;
+      RC.on = false; body.classList.remove("reconn");
+      bleRestored(true);
+    } catch (e) {
+      clearTimeout(to);
+      if (!RC.on || gen !== RC.gen) return;
+      RC.att++;   // invalidate a late-completing attempt
+      try { if (userDevice.gatt.connected) userDevice.gatt.disconnect(); } catch (x) {}
+      scheduleReconnect();
+    }
+  }
+  function cancelReconnect() {
+    if (!RC.on) return;
+    RC.on = false; RC.gen++; RC.att++; clearTimeout(RC.timer); body.classList.remove("reconn");
+  }
+  function reconnectGiveUp() {
+    cancelReconnect();
+    setStatus("Disconnected", "bad");
+    setBtn("Connect", "Search for JetronicReader", false);
+    log("e", "Stopped reconnecting after " + RC_MAX_IDLE + " attempts · press Connect");
+    renderLamps();
+  }
+  // demo mode: simulated drop + automatic reconnect
+  function demoDrop() {
+    demoLost = nowMs(); body.classList.add("reconn");
+    setConnectedUi(false);
+    setStatus("Reconnecting…", "bad");
+    setBtn("Reconnecting…", "Demonstration · simulated connection loss", true);
+    bleLost();
+  }
+  function demoBack() {
+    demoLost = 0; body.classList.remove("reconn");
+    lastSeq = null; lastPktAt = nowMs();
+    setConnectedUi(true);
+    setStatus("Connected · demonstration", "ok");
+    setBtn("Connected", "Demonstration data", true);
+    bleRestored(true);
+  }
+
+
+
+  /* ---------------- v1: 6a7e1004 settings ---------------- */
+  var CFG = { v: null, busy: false };
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function cfgRead() {
+    if (!charCfg) return null;
+    var dv = await charCfg.readValue();
+    if (dv.byteLength < 10) throw new Error("1004 read: " + dv.byteLength + " B (expected 10)");
+    CFG.v = { proto: dv.getUint8(0), trim: dv.getFloat32(1, true), ofs: dv.getFloat32(5, true), z: dv.getUint8(9) === 1, t: nowMs() };
+    if (document.activeElement !== $("trim-in")) $("trim-in").value = (Math.round(CFG.v.trim * 10) / 10).toString();
+    renderCfg();
+    return CFG.v;
+  }
+  function cfgMsg(text, kind) { var m = $("cfg-msg"); m.textContent = text || ""; m.className = "msg" + (kind ? " " + kind : ""); }
+  function renderCfg() {
+    var ok = connected && !!charCfg, v = CFG.v;
+    $("cfg-sum").textContent = !connected ? "not connected" : !charCfg ? "not available on this device" : v ? "correction " + (v.trim > 0 ? "+" : "") + fmt(v.trim, 1) + "° · " + (v.z ? "relay baseline " + fmt(v.ofs, 2) + " V" : "no relay baseline") : "reading…";
+    $("cfg-trim").textContent = ok && v ? (v.trim > 0 ? "+" : "") + fmt(v.trim, 1) : "—";
+    $("cfg-ofs").textContent = ok && v ? fmt(v.ofs, 3) : "—";
+    $("cfg-z").textContent = ok && v ? (v.z ? "set" : "not set") : "—";
+    ["trim-m", "trim-p", "trim-w", "trim-0", "rz-set", "rz-clr", "cfg-fr", "trim-in"].forEach(function (id) { $(id).disabled = !ok || CFG.busy; });
+  }
+  async function cfgWrite(bytes) {
+    var u8 = new Uint8Array(bytes);
+    if (charCfg.writeValueWithResponse) await charCfg.writeValueWithResponse(u8);
+    else await charCfg.writeValue(u8);
+    await sleep(350);   // firmware applies commands in loop(), then refreshes the read value
+    return cfgRead();
+  }
+  async function cfgDo(label, bytes, check) {
+    if (!charCfg || CFG.busy) return;
+    var before = CFG.v ? { trim: CFG.v.trim, ofs: CFG.v.ofs, z: CFG.v.z } : null;
+    CFG.busy = true; renderCfg(); cfgMsg(label + "…", "");
+    try {
+      var v = await cfgWrite(bytes), r = check ? check(v, before) : null;
+      if (r && r.bad) { cfgMsg(r.bad, "bad"); log("w", "Settings: " + r.bad); }
+      else { var okTxt = r && r.ok || label + " · confirmed by the device"; cfgMsg(okTxt, "ok"); log("g", "Settings: " + okTxt); }
+    } catch (e) { cfgMsg(label + " failed: " + (e && e.message || e), "bad"); log("e", "Settings: " + label + " failed · " + (e && e.message || e)); }
+    CFG.busy = false; renderCfg();
+  }
+  function trimBytes(deg) { var b = new ArrayBuffer(5), v = new DataView(b); v.setUint8(0, 0x01); v.setFloat32(1, deg, true); return new Uint8Array(b); }
+  function trimVal() { var x = parseFloat(String($("trim-in").value).replace(",", ".")); return Number.isFinite(x) ? Math.max(-20, Math.min(20, Math.round(x * 10) / 10)) : null; }
+  function writeTrim(x) {
+    if (x === null) { cfgMsg("Enter a correction between −20 and +20 degrees", "bad"); return; }
+    $("trim-in").value = String(x);
+    cfgDo("Advance correction " + (x > 0 ? "+" : "") + x.toFixed(1) + "°", trimBytes(x), function (v) {
+      return Math.abs(v.trim - x) < 0.051 ? { ok: "Advance correction " + (x > 0 ? "+" : "") + x.toFixed(1) + "° saved on the device" } : { bad: "The correction was not saved: the device reports " + fmt(v.trim, 2) + "°" };
+    });
+  }
+  $("trim-w").addEventListener("click", function () { writeTrim(trimVal()); });
+  $("trim-0").addEventListener("click", function () { writeTrim(0); });
+  $("trim-m").addEventListener("click", function () { var x = trimVal(); $("trim-in").value = String(Math.max(-20, Math.round(((x === null ? 0 : x) - 0.5) * 10) / 10)); });
+  $("trim-p").addEventListener("click", function () { var x = trimVal(); $("trim-in").value = String(Math.min(20, Math.round(((x === null ? 0 : x) + 0.5) * 10) / 10)); });
+  $("trim-in").addEventListener("keydown", function (ev) { if (ev.key === "Enter") writeTrim(trimVal()); });
+  $("rz-set").addEventListener("click", function () {
+    cfgDo("Relay baseline", [0x02], function (v, b) {
+      var changed = !b || !b.z || Math.abs(v.ofs - b.ofs) > 1e-4;
+      if (!v.z) return { bad: "The device did not set the baseline: the ignition voltage is below 8 V, the voltages are not steady, or the difference is larger than 1.5 V" };
+      if (!changed) return { ok: "Relay baseline unchanged at " + fmt(v.ofs, 3) + " V · the device may have refused it; try again with the ignition on and the engine off" };
+      return { ok: "Relay baseline set · " + fmt(v.ofs, 3) + " V" };
+    });
+  });
+  $("rz-clr").addEventListener("click", function () { cfgDo("Clear relay baseline", [0x03], function (v) { return v.z ? { bad: "The relay baseline is still set" } : { ok: "Relay baseline cleared" }; }); });
+  $("cfg-fr").addEventListener("click", function () {
+    var b = $("cfg-fr");
+    if (!b.classList.contains("arm")) {
+      b.classList.add("arm"); b.querySelector("span").textContent = "Press again to reset (correction 0°, baseline cleared)";
+      setTimeout(function () { if (b.isConnected) { b.classList.remove("arm"); b.querySelector("span").textContent = "Factory reset"; } }, 4000);
+      return;
+    }
+    b.classList.remove("arm"); b.querySelector("span").textContent = "Factory reset";
+    cfgDo("Factory reset", [0x7F, 0xA5], function (v) { return Math.abs(v.trim) < 0.01 && !v.z ? { ok: "Factory reset done · correction 0°, relay baseline cleared" } : { bad: "Reset not confirmed (correction " + fmt(v.trim, 2) + "°, baseline " + (v.z ? "set" : "not set") + ")" }; });
+  });
+
+  btn.addEventListener("click", function () {
+    if (DEMO) return;
+    if (device && device.gatt && device.gatt.connected) return;
+    connect();
+  });
+
+  /* ---------------- Demo mode (?demo=1[&ff=seconds][&theme=…]) ---------------- */
+  var demoTrim = 0, demoOfs = 0, demoZero = false;
+  function startDemo() {
+    var seed = 12345;
+    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    function n(a) { return (rnd() - 0.5) * 2 * a; }
+    var seq = 0, simT = 0;
+    // s.d below is the LOW-time duty (negative duty) that carries the codes.
+    // 60 s scenario: idle, throttle blip, E30 snapped, E50 (amber), seq gap, AVANS invalid,
+    // engine stop with E70 (amber), 95 % (E95, app-detected), ignition-off 100 % STALLED (E100)
+    function sim(t) {
+      var c = t % 60, f = 0, d, rpm, adv, vb = 13.9 + n(0.04), skip = false;
+      var idle = function () { d = 52.3 + n(0.7); rpm = 850 + n(18); adv = 12.5 + n(0.4); };
+      idle();
+      if (c >= 5 && c < 8) { var b = Math.sin((c - 5) / 3 * Math.PI); d = 52 + b * 16 + n(0.8); rpm = 850 + b * 1700 + n(30); adv = 12.5 + b * 16; }
+      else if (c >= 8 && c < 16) { d = c < 11 ? 30.4 + n(0.2) : 30; rpm = 860 + n(15); if (c >= 11) f |= FLAG_SNAPPED; }
+      else if (c >= 17.5 && c < 22) { d = c < 20.5 ? 49.6 + n(0.2) : 50; rpm = 900 + n(15); if (c >= 20.5) f |= FLAG_SNAPPED; }
+      else if (c >= 34 && c < 40) { rpm = 0; adv = 0; d = c < 37 ? 70.3 + n(0.2) : 70; vb = 12.35 + n(0.03); if (c >= 37) f |= FLAG_SNAPPED; }
+      else if (c >= 40 && c < 46) { rpm = 0; adv = 0; d = 95.2 + n(0.25); vb = 12.3 + n(0.03); }
+      else if (c >= 46 && c < 50) { rpm = 0; adv = 0; d = 100; vb = 12.3 + n(0.03); f |= FLAG_STALLED; }   // pin LOW: H 0 / L 100 -> E100
+      if (rpm > 0 && !(c >= 30 && c < 32)) f |= FLAG_ADV_VALID;
+      if (c >= 28 && c < 28.1) skip = true;
+      // v1: KL15 after the relay; 22-28 s simulates a worn KL15 relay (0.9 V drop -> flag after 2 s)
+      var drop = 0.18 + n(0.02);
+      if (c >= 22 && c < 28) { drop = 0.95 + n(0.05); if (c >= 24) f |= FLAG_RELAY; }
+      if (c >= 46 && c < 50) drop = 0;
+      return { d: d, rpm: Math.max(0, rpm), adv: adv + demoTrim, vb: vb, f: f, skip: skip, drop: drop, k15: c >= 46 && c < 50 ? 0.2 : vb - drop, c: c };
+    }
+    function packet(s) {
+      var buf = new ArrayBuffer(34), v = new DataView(buf);
+      v.setFloat32(0, 100 - s.d, true); v.setFloat32(4, s.d, true); v.setFloat32(8, -s.d, true);   // s.d = LOW duty; H = 100 − L
+      v.setFloat32(12, s.rpm, true); v.setFloat32(16, s.adv, true);
+      v.setInt32(20, s.rpm > 0 ? Math.round(s.adv / 180 * (30e6 / s.rpm)) : 0, true);
+      v.setFloat32(24, s.vb, true); v.setFloat32(28, s.k15, true);
+      v.setUint8(32, s.f); seq = (seq + 1) & 255; v.setUint8(33, seq);
+      return v;
+    }
+    function spPacket(s) {
+      var buf = new ArrayBuffer(SPLEN), v = new DataView(buf), on = s.rpm > 0 && !(s.c >= 30 && s.c < 32), f = 0;
+      var load = Math.max(0, (s.rpm - 850) / 1700), sat = on && load > 0.4;
+      if (on) f |= SP_BURN | SP_DWELL | SP_FRESH; if (sat) f |= SP_PEAK_SAT; if (s.f & FLAG_RELAY) f |= SP_RELAY; if (demoZero) f |= SP_ZEROED;
+      demoCnt += on ? Math.round(s.rpm / 60 * 2 * 0.1) : 0;
+      v.setUint8(0, 1); v.setUint8(1, f); v.setFloat32(2, on || s.d < 100 ? 100 - s.d + n(0.6) : -1, true);
+      v.setFloat32(6, on ? 38 - load * 6 + n(1.2) : 0, true); v.setFloat32(10, on ? 1.45 - load * 0.35 + n(0.05) : 0, true);
+      v.setFloat32(14, on ? 3.6 + load * 0.8 + n(0.1) : 0, true); v.setFloat32(18, on ? (sat ? 129.8 : 96 + load * 60 + n(3)) : 0, true);
+      v.setFloat32(22, s.k15, true); v.setFloat32(26, s.vb, true); v.setFloat32(30, demoTrim, true); v.setUint32(34, demoCnt, true);
+      v.setFloat32(38, s.k15 > 1 ? s.drop - (demoZero ? demoOfs : 0) : 0, true); v.setUint8(42, 1); spSeq = (spSeq + 1) & 255; v.setUint8(43, spSeq);
+      return v;
+    }
+    function step() {
+      var c = simT % 60, s = sim(simT); simT += 0.1; var p = packet(s);
+      demoLastDrop = s.drop; demoLastK15 = s.k15;
+      if (!NOGAP && c >= 53 && c < 56.5) { if (!demoLost) demoDrop(); return; }   // V5: simulated BLE drop
+      if (demoLost) demoBack();
+      if (!s.skip) { onPacket(p); onSpark(spPacket(s)); }
+    }
+    var NOGAP = params.get("gap") === "0";
+    var spSeq = 0, demoCnt = 0, demoLastDrop = 0, demoLastK15 = 0;
+    // demo 6a7e1004: same opcodes / 10 B read as fw v0.6
+    charCfg = {
+      writeValue: async function (u8) {
+        var b = new Uint8Array(u8.buffer || u8, u8.byteOffset || 0, u8.byteLength || u8.length);
+        if (b[0] === 0x01 && b.length === 5) { var x = new DataView(b.buffer, b.byteOffset, 5).getFloat32(1, true); if (Number.isFinite(x)) demoTrim = Math.max(-20, Math.min(20, x)); }
+        else if (b[0] === 0x02 && b.length === 1) { if (demoLastK15 > 8 && Math.abs(demoLastDrop) <= 1.5) { demoOfs = demoLastDrop; demoZero = true; } }
+        else if (b[0] === 0x03) { demoZero = false; demoOfs = 0; }
+        else if (b[0] === 0x7F && b[1] === 0xA5) { demoZero = false; demoOfs = 0; demoTrim = 0; }
+      },
+      readValue: async function () { var b = new ArrayBuffer(10), v = new DataView(b); v.setUint8(0, 1); v.setFloat32(1, demoTrim, true); v.setFloat32(5, demoOfs, true); v.setUint8(9, demoZero ? 1 : 0); return v; }
+    };
+    charCfg.writeValueWithResponse = charCfg.writeValue;
+    sparkAvail = true;
+    device = { name: "JetronicReader" };
+    setConnectedUi(true);
+    setStatus("Connected · demonstration", "ok");
+    setBtn("Connected", "Demonstration data", true);
+    document.getElementById("info").textContent = "Jetronic Reader demonstration device";
+    fwInfo = "Jetronic Reader demonstration device";
+    cfgRead().catch(function () {});
+    log("g", "Connected · JetronicReader (demonstration)");
+    var ff = parseFloat(params.get("ff") || "0");
+    if (ff > 0) {
+      var base = Date.now();
+      clockOffset = -ff * 1000;
+      logItems.length = 0;
+      log("g", "Connected · JetronicReader (demonstration)");
+      for (var i = 0; i < ff * 10; i++) { clockOffset = -ff * 1000 + i * 100 - (Date.now() - base); step(); }
+      clockOffset = 0;
+    }
+    lastPktAt = nowMs();
+    setInterval(step, 100);
+  }
+
+  /* ======================= V5: REC (IndexedDB) · sesiuni · redare · Wake Lock ======================= */
+  // v1 row on disk: uint32 t (ms since session start) + raw 34-byte 1001 packet + uint8 decoded code (255 = none)
+  //                 + raw 44-byte 1003 spark packet (all zero = none / stale > 1.5 s) = 83 B
+  // Separate database from V5 (same origin, different row size): V5 sessions are never touched.
+  var ROW = 83, SPO = 39, GAP_MS = 500, DB_NAME = "jetronic-reader-v1";
+  var db = null, dbErr = "", sesCount = 0, SCREEN = "live";
+  var REC = { on: false, s: null, buf: [], lastAbs: 0, ovSum: 0, ovN: 0, lastFlush: 0, err: "", timer: 0, persistAsked: false, flushing: null };
+  function $(id) { return document.getElementById(id); }
+  function hms(sec, dec) {
+    if (!Number.isFinite(sec)) return "—";
+    if (sec < 0) sec = 0;
+    var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), r = sec - h * 3600 - m * 60;
+    var ss = dec ? (r < 10 ? "0" : "") + (Math.floor(r * 10) / 10).toFixed(1) : pad(Math.floor(r));
+    return (h ? h + ":" + pad(m) : pad(m)) + ":" + ss;
+  }
+  function thou(x) { return Number.isFinite(x) ? String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "—"; }
+  function codeName(c) { return "E" + (c < 10 ? "0" : "") + c; }
+  function kb(b) { return b < 1024 * 1024 ? Math.max(0, Math.round(b / 1024)) + " KB" : b < 1024 * 1024 * 1024 ? (b / 1048576).toFixed(b < 10485760 ? 2 : 1) + " MB" : (b / 1073741824).toFixed(1) + " GB"; }
+  var WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function dateStr(ms, sec) { var d = new Date(ms); return WD[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()] + " " + d.getFullYear() + " · " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + (sec ? ":" + pad(d.getSeconds()) : ""); }
+  function oraStr(ms) { var d = new Date(ms), z = d.getMilliseconds(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + clock(d) + "." + (z < 10 ? "00" : z < 100 ? "0" : "") + z; }
+  function isAmber(c) { return !!(CODE_BY[c] && CODE_BY[c].amber); }
+
+  /* ---------- IndexedDB ---------- */
+  function idbOpen() {
+    return new Promise(function (res, rej) {
+      if (!window.indexedDB) return rej(new Error("This browser does not allow saving on the phone"));
+      var r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = function () {
+        var d = r.result;
+        if (!d.objectStoreNames.contains("sessions")) d.createObjectStore("sessions", { keyPath: "id", autoIncrement: true });
+        if (!d.objectStoreNames.contains("chunks")) d.createObjectStore("chunks", { keyPath: ["sid", "no"] });
+      };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error || new Error("Error opening storage")); };
+      r.onblocked = function () { rej(new Error("Storage blocked (another tab open?)")); };
+    });
+  }
+  function req(r) { return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+  function txDone(tx) { return new Promise(function (res, rej) { tx.oncomplete = function () { res(); }; tx.onerror = tx.onabort = function () { rej(tx.error || new Error("transaction aborted")); }; }); }
+  function os(name, mode) { return db.transaction(name, mode || "readonly").objectStore(name); }
+  function getAllSessions() { return req(os("sessions").getAll()); }
+  function getSession(id) { return req(os("sessions").get(id)); }
+  function putSession(s) { return req(os("sessions", "readwrite").put(s)); }
+  function chunkRange(id) { return IDBKeyRange.bound([id, 0], [id, Infinity]); }
+  function getChunks(id) { return req(os("chunks").getAll(chunkRange(id))); }
+  async function countSessions() { sesCount = db ? await req(os("sessions").count()) : 0; renderRec(); }
+  async function recoverSessions() {
+    var ss = await getAllSessions();
+    for (var i = 0; i < ss.length; i++) {
+      var s = ss[i];
+      if (s.end == null) {
+        s.end = s.start + (s.lastT || 0); s.recovered = true;
+        await putSession(s);
+        log("w", "Session #" + s.id + " recovered after the page was reloaded · " + thou(s.n) + " samples");
+      }
+    }
+  }
+  async function deleteSession(id) {
+    var tx = db.transaction(["sessions", "chunks"], "readwrite");
+    tx.objectStore("chunks").delete(chunkRange(id));
+    tx.objectStore("sessions").delete(id);
+    await txDone(tx);
+    log("w", "Session #" + id + " deleted");
+    await countSessions();
+  }
+  async function loadRows(s) {
+    var ch = (await getChunks(s.id)).sort(function (a, b) { return a.no - b.no; }), n = 0;
+    ch.forEach(function (c) { n += c.n; });
+    var d = { n: n, t: new Float64Array(n), dh: new Float32Array(n), dl: new Float32Array(n), dn: new Float32Array(n), rpm: new Float32Array(n), adv: new Float32Array(n),
+      advUs: new Int32Array(n), vb: new Float32Array(n), vdd: new Float32Array(n), fl: new Uint8Array(n), seq: new Uint8Array(n), code: new Uint8Array(n),
+      // v1 (6a7e1003); NaN when no spark packet was stored or the value was not valid
+      sp: new Uint8Array(n), spf: new Uint8Array(n), draw: new Float32Array(n), bv: new Float32Array(n), bms: new Float32Array(n), dw: new Float32Array(n), pk: new Float32Array(n),
+      k15: new Float32Array(n), k30: new Float32Array(n), trim: new Float32Array(n), scnt: new Float64Array(n), rd: new Float32Array(n), adcm: new Uint8Array(n) };
+    var k = 0;
+    ch.forEach(function (c) {
+      var buf = c.data instanceof ArrayBuffer ? c.data : c.data.buffer, v = new DataView(buf);
+      for (var i = 0; i < c.n; i++, k++) {
+        var o = i * ROW;
+        d.t[k] = v.getUint32(o, true);
+        d.dh[k] = v.getFloat32(o + 4, true); d.dl[k] = v.getFloat32(o + 8, true); d.dn[k] = v.getFloat32(o + 12, true);
+        d.rpm[k] = v.getFloat32(o + 16, true); d.adv[k] = v.getFloat32(o + 20, true); d.advUs[k] = v.getInt32(o + 24, true);
+        d.vb[k] = v.getFloat32(o + 28, true); d.vdd[k] = v.getFloat32(o + 32, true);
+        d.fl[k] = v.getUint8(o + 36); d.seq[k] = v.getUint8(o + 37); d.code[k] = v.getUint8(o + 38);
+        var so = o + SPO, has = v.getUint8(so) === 1, sf = has ? v.getUint8(so + 1) : 0, fr = !!(sf & SP_FRESH);
+        d.sp[k] = has ? 1 : 0; d.spf[k] = sf;
+        d.draw[k] = has ? v.getFloat32(so + 2, true) : NaN;
+        d.bv[k] = has && fr && sf & SP_BURN ? v.getFloat32(so + 6, true) : NaN;
+        d.bms[k] = has && fr && sf & SP_BURN ? v.getFloat32(so + 10, true) : NaN;
+        d.dw[k] = has && fr && sf & SP_DWELL ? v.getFloat32(so + 14, true) : NaN;
+        d.pk[k] = has && fr ? v.getFloat32(so + 18, true) : NaN;
+        d.k15[k] = has ? v.getFloat32(so + 22, true) : d.vdd[k];   // 1001 vdd = KL15 in fw v0.6
+        d.k30[k] = has ? v.getFloat32(so + 26, true) : d.vb[k];    // 1001 vbat = KL30
+        d.trim[k] = has ? v.getFloat32(so + 30, true) : NaN;
+        d.scnt[k] = has ? v.getUint32(so + 34, true) : NaN;
+        d.rd[k] = has ? v.getFloat32(so + 38, true) : NaN;
+        d.adcm[k] = has ? v.getUint8(so + 42) : 255;
+      }
+    });
+    return d;
+  }
+
+  /* ---------- recording ---------- */
+  async function recStart() {
+    if (REC.on || !db) return;
+    var t = nowMs();
+    var s = { start: t, end: null, lastT: 0, n: 0, marks: [], rpmMin: null, rpmMax: null, codes: [], gaps: [], ov: [], bytes: 0, chunks: 0,
+      recovered: false, dev: device && device.name || "", demo: DEMO, app: APP_VER, fw: fwInfo, relay: 0, psat: 0 };
+    try { s.id = await req(os("sessions", "readwrite").add(s)); }
+    catch (e) { REC.err = e && e.message || "error"; log("e", "Recording did not start: " + REC.err); renderRec(); return; }
+    REC.on = true; REC.s = s; REC.buf = []; REC.lastAbs = 0; REC.ovSum = 0; REC.ovN = 0; REC.lastFlush = t; REC.err = "";
+    REC.timer = setInterval(function () { recFlush(false); }, 1000);
+    if (!REC.persistAsked && navigator.storage && navigator.storage.persist) {
+      REC.persistAsked = true;
+      navigator.storage.persist().then(function (ok) { log(ok ? "g" : "w", "Permanent storage: " + (ok ? "allowed" : "not allowed by the browser")); }, function () {});
+    }
+    log("e", "Recording started · session " + s.id);
+    countSessions(); renderRec(); renderRecOv();
+  }
+  // called from onPacket for every valid 34-byte packet
+  function recPush(bytes, t, code, p) {
+    if (!REC.on) return;
+    var s = REC.s, rel = Math.max(0, Math.round(t - s.start));
+    if (REC.lastAbs && t - REC.lastAbs > GAP_MS) s.gaps.push([Math.round(REC.lastAbs - s.start), rel]);
+    REC.lastAbs = t;
+    var row = new Uint8Array(ROW);
+    new DataView(row.buffer).setUint32(0, rel, true);
+    row.set(bytes, 4);
+    row[38] = code === null || code === undefined ? 255 : code;
+    if (spBytes && t - spAt <= SP_STALE_MS) row.set(spBytes, SPO);
+    if (p.flags & FLAG_RELAY) s.relay = (s.relay || 0) + 1;
+    if (sp && t - spAt <= SP_STALE_MS && (sp.f & SP_FRESH) && (sp.f & SP_PEAK_SAT)) s.psat = (s.psat || 0) + 1;
+    REC.buf.push(row);
+    s.n++; s.lastT = rel;
+    if (Number.isFinite(p.rpm)) {
+      s.rpmMin = s.rpmMin === null ? p.rpm : Math.min(s.rpmMin, p.rpm);
+      s.rpmMax = s.rpmMax === null ? p.rpm : Math.max(s.rpmMax, p.rpm);
+      REC.ovSum += p.rpm; REC.ovN++;
+    }
+    if (code !== null && code !== undefined && s.codes.indexOf(code) < 0) { s.codes.push(code); s.codes.sort(function (a, b) { return a - b; }); }
+  }
+  function recFlush(final) {
+    var s = REC.s; if (!s || !db) return Promise.resolve();
+    var rows = REC.buf; REC.buf = [];
+    var tx;
+    try { tx = db.transaction(["sessions", "chunks"], "readwrite"); }
+    catch (e) { REC.err = e.message; return Promise.resolve(); }
+    if (rows.length) {
+      var data = new Uint8Array(rows.length * ROW);
+      for (var i = 0; i < rows.length; i++) data.set(rows[i], i * ROW);
+      var t0 = new DataView(rows[0].buffer).getUint32(0, true);
+      tx.objectStore("chunks").put({ sid: s.id, no: s.chunks, t0: t0, n: rows.length, data: data.buffer });
+      s.chunks++; s.bytes += data.length;
+      if (REC.ovN) s.ov.push([Math.round(s.lastT / 100) / 10, Math.round(REC.ovSum / REC.ovN)]);
+      REC.ovSum = 0; REC.ovN = 0;
+    }
+    if (final) s.end = Math.max(s.start + s.lastT, nowMs());
+    tx.objectStore("sessions").put(s);
+    var pr = txDone(tx).then(function () { REC.lastFlush = nowMs(); if (REC.err) log("g", "Saving resumed"); REC.err = ""; },
+      function (e) { var m = e && e.message || "error"; if (REC.err !== m) log("e", "Could not save: " + m); REC.err = m; });
+    REC.flushing = pr;
+    return pr;
+  }
+  async function recStop() {
+    if (!REC.on) return;
+    REC.on = false; clearInterval(REC.timer);
+    var s = REC.s;
+    await recFlush(true);
+    log("e", "Recording saved · session " + s.id + " · " + hms((s.end - s.start) / 1000) + " · " + thou(s.n) + " samples · " + s.marks.length + " markers");
+    REC.s = null; closeSheet();
+    countSessions(); renderRec();
+  }
+  function recMarker() {
+    if (!REC.on) return;
+    var s = REC.s, m = { t: Math.max(0, Math.round(nowMs() - s.start)), n: "M" + (s.marks.length + 1), l: "" };
+    s.marks.push(m);
+    log("w", "Marker " + m.n + " · " + hms(m.t / 1000, 1));
+    openSheet(m, s);
+    renderRec(); renderRecOv();
+  }
+
+  /* ---------- marker quick-label sheet ---------- */
+  var sheet = { m: null, s: null, timer: 0 };
+  function openSheet(m, s) {
+    sheet.m = m; sheet.s = s;
+    $("mk-h").textContent = "Marker " + m.n + " · " + hms(m.t / 1000, 1);
+    $("mk-t").textContent = "Choose a label (optional) · closes by itself in 5 seconds";
+    var b = $("mk-bar"); b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
+    $("mk-sheet").hidden = false;
+    clearTimeout(sheet.timer); sheet.timer = setTimeout(closeSheet, 5000);
+  }
+  function closeSheet() { clearTimeout(sheet.timer); var el = $("mk-sheet"); if (el) el.hidden = true; sheet.m = null; sheet.s = null; }
+  function setMarkLabel(l) {
+    var m = sheet.m, s = sheet.s; if (!m) return;
+    m.l = l; log("w", "Marker " + m.n + " · " + l);
+    if (!(REC.on && REC.s === s) && db) putSession(s).catch(function () {});   // REC running: saved by the next 1 s flush
+  }
+  $("mk-chips").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-l]"); if (!b || !sheet.m) return;
+    var l = b.getAttribute("data-l");
+    if (l === "+") {
+      clearTimeout(sheet.timer);
+      var tx = window.prompt("Label for " + sheet.m.n, "");
+      if (tx && tx.trim()) setMarkLabel(tx.trim().slice(0, 80));
+    } else setMarkLabel(l);
+    closeSheet();
+  });
+
+  /* ---------- recording panel ---------- */
+  function renderRec() {
+    var el = $("rec"); if (!el) return;
+    el.classList.toggle("on", REC.on); el.classList.toggle("idle", !REC.on);
+    setTxt($("rec-tag"), REC.on ? "Recording" : "Not recording");
+    var rs = $("rec-state"), cls = "st " + (REC.on ? "bad" : "off");
+    if (rs.className !== cls) { rs.className = cls; rs.querySelector(".led").className = "led " + (REC.on ? "bad" : "off"); }
+    var sv = $("rec-sv"), l2;
+    if (REC.on) {
+      var s = REC.s, t = nowMs();
+      setTxt($("rec-time"), hms((t - s.start) / 1000));
+      l2 = '<span class="num">' + thou(s.n) + '</span> samples · <span class="num">' + s.marks.length + "</span> marker" + (s.marks.length === 1 ? "" : "s");
+      setTxt(sv, REC.err ? "Could not save: " + REC.err : "Saved on this device · " + kb(s.bytes));
+      var gt = 0; s.gaps.forEach(function (g) { gt += g[1] - g[0]; });
+      var lost = connected ? 0 : REC.lastAbs ? t - REC.lastAbs : 0;
+      setTxt($("rec-gap"), lost > GAP_MS ? "No data for " + (lost / 1000).toFixed(1) + " s" : s.gaps.length ? s.gaps.length + (s.gaps.length === 1 ? " gap · " : " gaps · ") + (gt / 1000).toFixed(1) + " s" : "");
+    } else {
+      setTxt($("rec-time"), "—");
+      l2 = db ? "Press Start recording to record a session." : dbErr ? "Recording is not available: " + esc(dbErr) : "Preparing storage…";
+      setTxt(sv, db ? "Sessions are saved on this device." : "No storage available.");
+      setTxt($("rec-gap"), "");
+    }
+    var l2e = $("rec-l2"); if (l2e._h !== l2) { l2e.innerHTML = l2; l2e._h = l2; }
+    $("rec-svw").classList.toggle("err", !!REC.err || !!dbErr);
+    setTxt($("rec-ses"), "Sessions (" + sesCount + ")");
+    $("rec-start").disabled = !db || REC.on;
+    $("rec-mk").disabled = !REC.on; $("rec-stop").disabled = !REC.on;
+  }
+  function pal() {
+    return { duty: "#b45309", rpm: "#1f4e85", dutyT: "#9a4a08", rpmT: "#1f4e85", mk: "#3d4f66", mkT: "#ffffff", gap: "#c62828", grid: "#d5dae0", grid2: "#eceef1", txt: "#5d6672",
+      cur: "#c62828", curT: "#ffffff", warn: "#e09a00", warnT: "#3d2700", bad: "#c62828", badT: "#ffffff", none: "#eef0f2", noneT: "#8a929c", brush: "#1f4e85", bg: "#ffffff",
+      f: FONT, mono: FONT, glow: false, grad: ["#1f4e85", "#2a7f86", "#55702a", "#b45309", "#c62828"] };
+  }
+
+  function hatch(id, col) { return '<pattern id="' + id + '" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="' + col + '" fill-opacity=".05"/><line x1="0" y1="0" x2="0" y2="6" stroke="' + col + '" stroke-opacity=".45" stroke-width="1.6"/></pattern>'; }
+  function txt(x, y, s, o) { o = o || {}; return '<text x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '"' + (o.a ? ' text-anchor="' + o.a + '"' : "") + ' font-size="' + (o.s || 9.5) + '" font-weight="' + (o.w || 600) + '" font-family="' + (o.f || FONT) + '" fill="' + o.c + '">' + esc(String(s)) + "</text>"; }
+  function renderRecOv() {
+    var el = $("rec-ov"); if (!el || !REC.on || SCREEN !== "live") return;
+    var s = REC.s, W = el.clientWidth || 340, H = 40, P = pal(), T = Math.max(1, (nowMs() - s.start) / 1000);
+    var span = Math.max(T, 60), X = function (q) { return q / span * W; }, rmax = Math.max(3000, Math.ceil((s.rpmMax || 0) / 1000) * 1000);
+    var Y = function (v) { return 4 + (1 - Math.min(rmax, v) / rmax) * (H - 14); };
+    var h = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none"><defs>' + hatch("rovh", P.gap) + "</defs>";
+    h += '<line x1="0" y1="' + (H - 10) + '" x2="' + W + '" y2="' + (H - 10) + '" stroke="' + P.grid + '"/>';
+    var gl = s.gaps.slice(); if (!connected && REC.lastAbs && nowMs() - REC.lastAbs > GAP_MS) gl.push([REC.lastAbs - s.start, nowMs() - s.start]);
+    gl.forEach(function (g) { var x0 = X(g[0] / 1000), x1 = Math.max(X(g[1] / 1000), x0 + 3); h += '<rect x="' + x0.toFixed(1) + '" y="0" width="' + (x1 - x0).toFixed(1) + '" height="' + (H - 10) + '" fill="url(#rovh)"/>'; });
+    var d = "", pv = null;
+    s.ov.forEach(function (q) {
+      var brk = !pv || gl.some(function (g) { return g[0] / 1000 >= pv[0] - 1.05 && g[0] / 1000 < q[0]; }) && q[0] - pv[0] > 1.2;
+      d += (brk ? "M" : "L") + X(q[0]).toFixed(1) + " " + Y(q[1]).toFixed(1); pv = q;
+    });
+    h += '<path d="' + d + '" fill="none" stroke="' + P.rpm + '" stroke-width="1.4" stroke-linejoin="round"/>';
+    s.marks.forEach(function (m) { var x = X(m.t / 1000); h += '<line x1="' + x.toFixed(1) + '" y1="1" x2="' + x.toFixed(1) + '" y2="' + (H - 10) + '" stroke="' + P.mk + '" stroke-dasharray="2 2"/>' + txt(x + 3, 8, m.n, { s: 8.5, w: 700, f: P.f, c: P.mk }); });
+    h += txt(0, H, "00:00", { s: 8.5, f: P.f, c: P.txt }) + txt(W, H, hms(T), { s: 8.5, f: P.f, c: P.txt, a: "end" }) + txt(W / 2, H, "Engine speed", { s: 8, f: P.f, c: P.txt, a: "middle" });
+    el.innerHTML = h + "</svg>";
+  }
+  setInterval(function () { renderRec(); }, 250);
+  setInterval(function () { renderRecOv(); }, 1000);
+  $("rec-start").addEventListener("click", function () { recStart(); });
+  $("rec-stop").addEventListener("click", function () { recStop(); });
+  $("rec-mk").addEventListener("click", function () { recMarker(); });
+  $("rec-ses").addEventListener("click", function (ev) { ev.preventDefault(); go("sessions"); });
+  window.addEventListener("pagehide", function () { if (REC.on) recFlush(false); });
+
+  /* ---------- Screen Wake Lock (whole time the page is visible) ---------- */
+  var WL = { state: "init", s: null, err: "" };
+  async function wakeAcquire() {
+    if (!navigator.wakeLock || typeof navigator.wakeLock.request !== "function") { setWake("unsupported"); return; }
+    if (document.visibilityState !== "visible") return;
+    if (WL.s && !WL.s.released) return;
+    try {
+      var s = await navigator.wakeLock.request("screen");
+      WL.s = s;
+      if (s && s.addEventListener) s.addEventListener("release", function () { if (WL.s === s) { WL.s = null; setWake("released"); } });
+      setWake("held");
+    } catch (e) { WL.err = e && e.name || "Error"; setWake("refused"); }
+  }
+  function setWake(st) {
+    var prevSt = WL.state; WL.state = st;
+    if (st !== prevSt) {
+      if (st === "held") log("g", "The screen is kept on");
+      else if (st === "unsupported") log("w", "The screen cannot be kept on · it may turn off");
+      else if (st === "refused") log("w", "The browser did not allow keeping the screen on (" + WL.err + ")");
+    }
+    var bad = st === "unsupported" || st === "refused";
+    $("wl-note").hidden = !bad;
+    $("wl-txt").innerHTML = "<b>The screen cannot be kept on</b> (" + (st === "refused" ? "not allowed by the browser" : "not supported by this browser") + "). If the screen turns off, the browser may pause this page and the connection and recording will stop until you return. Set the screen timeout to 10 minutes or more.";
+    renderLamps();
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") wakeAcquire();
+    else if (REC.on) recFlush(false);
+  });
+  document.addEventListener("pointerdown", function () { if (WL.state === "refused" || WL.state === "released") wakeAcquire(); }, true);
+
+  /* ---------- navigation (hash routes, Android back works) ---------- */
+  var SCR_HASH = { live: "", trend: "#trend", codes: "#codes", sessions: "#sesiuni", settings: "#settings" };
+  var SCR_TITLE = { live: "Live data", trend: "Trend", codes: "Fault codes", sessions: "Recorded sessions", replay: "Recorded session", settings: "Device settings" };
+  function go(screen, id) {
+    var h = screen === "replay" ? "#redare-" + id : (SCR_HASH[screen] || "");
+    if (location.hash !== h) history.pushState({ s: screen }, "", h || location.pathname + location.search);
+    route();
+  }
+  function route() {
+    var h = location.hash, m = /^#redare-(\d+)$/.exec(h);
+    var scr = h === "#sesiuni" ? "sessions" : h === "#trend" ? "trend" : h === "#codes" ? "codes" : h === "#settings" ? "settings" : m && db ? "replay" : "live";
+    if (h === "#sesiuni" && !db) scr = "live";
+    SCREEN = scr; body.setAttribute("data-screen", scr);
+    var tabs = document.querySelectorAll("#tabs .tab");
+    for (var i = 0; i < tabs.length; i++) { var g = tabs[i].getAttribute("data-go"); tabs[i].classList.toggle("on", g === scr || (scr === "replay" && g === "sessions")); }
+    setTxt($("doc-title"), "— " + SCR_TITLE[scr]);
+    if (scr !== "replay") rpGestureReset();
+    if (scr === "sessions") renderSessions();
+    else if (scr === "replay") openReplay(+m[1]);
+    else { renderRecOv(); render(true); renderLamps(); }
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener("popstate", route);
+  document.addEventListener("click", function (ev) {
+    var gb = ev.target.closest("[data-go]");
+    if (gb) { ev.preventDefault(); go(gb.getAttribute("data-go")); return; }
+    var b = ev.target.closest("[data-back]"); if (!b) return;
+    var to = b.getAttribute("data-back");
+    if (history.state && history.state.s && history.length > 1) history.back();
+    else { history.replaceState({ s: to }, "", to === "sessions" ? "#sesiuni" : location.pathname + location.search); route(); }
+  });
+
+  /* ---------- sessions list ---------- */
+  function sparkSvg(s) {
+    var W = 200, H = 30, dur = Math.max(1, ((s.end || nowMs()) - s.start) / 1000), P = pal();
+    var rmax = Math.max(3000, s.rpmMax || 0), d = "", pv = null;
+    (s.ov || []).forEach(function (q) {
+      var brk = !pv || (s.gaps || []).some(function (g) { return g[0] / 1000 >= pv[0] - 1.05 && g[0] / 1000 < q[0]; }) && q[0] - pv[0] > 1.2;
+      d += (brk ? "M" : "L") + (q[0] / dur * W).toFixed(1) + " " + (2 + (1 - Math.min(rmax, q[1]) / rmax) * (H - 4)).toFixed(1); pv = q;
+    });
+    var g = (s.gaps || []).map(function (q) { var x = q[0] / 1000 / dur * W; return '<rect x="' + x.toFixed(1) + '" y="0" width="' + Math.max(3, (q[1] - q[0]) / 1000 / dur * W).toFixed(1) + '" height="' + H + '" fill="url(#sph' + s.id + ')"/>'; }).join("");
+    return '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none"><defs>' + hatch("sph" + s.id, P.gap) + '</defs><line x1="0" y1="' + (H - 1) + '" x2="' + W + '" y2="' + (H - 1) + '" stroke="' + P.grid + '"/>' + g +
+      '<path d="' + d + '" fill="none" stroke="' + P.rpm + '" stroke-width="1.3" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+  }
+  async function renderSessions() {
+    var list = $("ses-list");
+    if (!db) { list.innerHTML = '<div class="panel empty">Recording is not available in this browser: ' + esc(dbErr) + "</div>"; return; }
+    var ss = (await getAllSessions()).sort(function (a, b) { return b.start - a.start; });
+    sesCount = ss.length; renderRec();
+    var tot = 0; ss.forEach(function (s) { tot += s.bytes || 0; });
+    $("st-n").textContent = ss.length; $("st-b").textContent = kb(tot);
+    var est = null, per = null;
+    try { if (navigator.storage && navigator.storage.estimate) est = await navigator.storage.estimate(); } catch (e) {}
+    try { if (navigator.storage && navigator.storage.persisted) per = await navigator.storage.persisted(); } catch (e) {}
+    $("st-f").textContent = est && est.quota ? "about " + kb(Math.max(0, est.quota - (est.usage || 0))) : "—";
+    $("st-p").innerHTML = "Kept permanently: " + (per === true ? '<span class="st ok"><span class="led ok"></span>Yes</span>' : per === false ? '<span class="st warn"><span class="led warn"></span>Not yet</span> (asked on the first recording)' : "unknown") +
+      " · One hour of recording uses about 3 MB.";
+    if (SCREEN !== "sessions") return;
+    if (!ss.length) { list.innerHTML = '<div class="panel empty">No sessions yet. Press <b>Start recording</b> on the Live screen; the data is saved on this device every second.</div>'; return; }
+    var h = '<div class="panel"><table class="grid ses-tab"><thead><tr><th>Started</th><th class="r only-desk">Duration</th><th class="r only-desk">Samples</th><th class="r only-desk">Markers</th><th class="only-desk">Engine speed</th><th class="only-desk">Overview</th><th>Fault codes</th><th class="r"></th></tr></thead><tbody>';
+    h += ss.map(function (s0) {
+      var live = REC.on && REC.s && REC.s.id === s0.id, s = live ? REC.s : s0;
+      var dur = ((live ? nowMs() : s.end || s.start + (s.lastT || 0)) - s.start) / 1000, gt = 0;
+      (s.gaps || []).forEach(function (g) { gt += g[1] - g[0]; });
+      var bd = (live ? '<span class="badge bad">Recording</span>' : "") + (s.recovered ? '<span class="badge">Recovered</span>' : "") +
+        ((s.gaps || []).length ? '<span class="badge">' + s.gaps.length + (s.gaps.length === 1 ? " gap · " : " gaps · ") + (gt / 1000).toFixed(1) + " s</span>" : "") + (s.demo ? '<span class="badge">Demonstration</span>' : "") + (s.relay ? '<span class="badge warn">Ignition relay warning</span>' : "");
+      var codes = (s.codes || []).length ? s.codes.map(function (c) { return '<span class="cc ' + (isAmber(c) ? "warn" : "bad") + '"><span class="led ' + (isAmber(c) ? "warn" : "bad") + '"></span>' + codeName(c) + "</span>"; }).join(" ") : '<span class="cc none">None</span>';
+      var dis = live ? " disabled" : "";
+      return '<tr data-sid="' + s.id + '"><td><div class="sd">' + dateStr(s.start) + '</div><div class="sb">Session ' + s.id + '<span class="only-phone"> · ' + hms(dur) + "</span> · " + kb(s.bytes || 0) + (bd ? " " + bd : "") + "</div></td>" +
+        '<td class="m only-desk">' + hms(dur) + '</td><td class="m only-desk">' + thou(s.n) + '</td><td class="m only-desk">' + (s.marks || []).length + '</td><td class="only-desk num">' + (s.rpmMin === null ? "—" : thou(s.rpmMin) + " – " + thou(s.rpmMax) + " rpm") +
+        '</td><td class="only-desk"><div class="spk">' + sparkSvg(s) + "</div></td><td>" + codes + "</td>" +
+        '<td class="r acts-cell"><button type="button" class="tb bordered primary" data-act="play"' + dis + ">" + svgIcon("play") + '<span>Open</span></button><button type="button" class="tb bordered" data-act="csv"' + (s.n ? dis : " disabled") + ' title="Export CSV">' + svgIcon("dl") +
+        '<span class="only-desk">CSV</span></button><button type="button" class="tb bordered danger" data-act="del"' + dis + ' title="Delete">' + svgIcon("del") + "<span>Delete</span></button></td></tr>";
+    }).join("");
+    list.innerHTML = h + "</tbody></table></div>";
+  }
+
+  $("ses-list").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-act]"); if (!b || b.disabled) return;
+    var id = +b.closest("[data-sid]").getAttribute("data-sid"), act = b.getAttribute("data-act");
+    if (act === "play") go("replay", id);
+    else if (act === "csv") exportCsv(id);
+    else if (act === "del") {
+      if (!b.classList.contains("arm")) {
+        b.classList.add("arm"); b.querySelector("span").textContent = "Confirm delete";
+        setTimeout(function () { if (b.isConnected) { b.classList.remove("arm"); b.querySelector("span").textContent = "Delete"; } }, 4000);
+        return;
+      }
+      b.disabled = true;
+      deleteSession(id).then(renderSessions, function (e) { log("e", "Delete failed: " + (e && e.message)); renderSessions(); });
+    }
+  });
+
+  /* ---------- CSV export ---------- */
+  function lowerBound(arr, n, v) { var lo = 0, hi = n; while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; } return lo; }
+  function f(v, n) { return Number.isFinite(v) ? v.toFixed(n) : ""; }
+  function csvq(s) { return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  async function buildCsv(id) {
+    var s = await getSession(id), d = await loadRows(s), mk = {};
+    (s.marks || []).forEach(function (m) {
+      if (!d.n) return;
+      var i = Math.min(d.n - 1, lowerBound(d.t, d.n, m.t)), tx = m.n + (m.l ? " " + m.l : "");
+      mk[i] = mk[i] ? mk[i] + " | " + tx : tx;
+    });
+    var L = ["t_ms,ora,duty_low,duty_high,duty_neg,rpm,adv_deg,adv_us,kl30_v,kl15_v,flags,seq,cod,relay_fault,kl15_sp_v,kl30_sp_v,relay_drop_v,adv_trim_deg,burn_v,burn_ms,dwell_ms,peak_v,peak_sat,wave_fresh,spark_count,duty_raw_high,sp_flags,adc_mode,marker"];
+    for (var i = 0; i < d.n; i++) {
+      L.push([d.t[i], oraStr(s.start + d.t[i]), f(d.dl[i], 2), f(d.dh[i], 2), f(d.dn[i], 2), f(d.rpm[i], 1), f(d.adv[i], 2), d.advUs[i], f(d.vb[i], 3), f(d.vdd[i], 3),
+        d.fl[i], d.seq[i], d.code[i] === 255 ? "" : codeName(d.code[i]), d.fl[i] & FLAG_RELAY ? 1 : 0,
+        d.sp[i] ? f(d.k15[i], 3) : "", d.sp[i] ? f(d.k30[i], 3) : "", f(d.rd[i], 3), f(d.trim[i], 2), f(d.bv[i], 2), f(d.bms[i], 3), f(d.dw[i], 3), f(d.pk[i], 1),
+        d.sp[i] ? (d.spf[i] & SP_PEAK_SAT ? 1 : 0) : "", d.sp[i] ? (d.spf[i] & SP_FRESH ? 1 : 0) : "", Number.isFinite(d.scnt[i]) ? d.scnt[i] : "",
+        d.sp[i] && d.draw[i] >= 0 ? f(d.draw[i], 2) : "", d.sp[i] ? d.spf[i] : "", d.sp[i] ? d.adcm[i] : "", csvq(mk[i] || "")].join(","));
+    }
+    var st = new Date(s.start);
+    return { name: "jetronic_v1_" + st.getFullYear() + "-" + pad(st.getMonth() + 1) + "-" + pad(st.getDate()) + "_" + pad(st.getHours()) + pad(st.getMinutes()) + "_s" + s.id + ".csv",
+      text: "\uFEFF" + L.join("\r\n") + "\r\n", rows: d.n };
+  }
+  async function exportCsv(id) {
+    try {
+      var c = await buildCsv(id);
+      var a = document.createElement("a"), url = URL.createObjectURL(new Blob([c.text], { type: "text/csv;charset=utf-8" }));
+      a.href = url; a.download = c.name; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 5000);
+      log("g", "CSV exported · " + c.name + " · " + thou(c.rows) + " rows");
+    } catch (e) { log("e", "CSV export failed: " + (e && e.message)); }
+  }
+  window.__jrCsv = buildCsv;   // used by the automated tests
+
+  /* ---------- replay ---------- */
+  var RP = null, rpRaf = 0;
+  async function openReplay(id) {
+    var s = db ? await getSession(id) : null;
+    if (!s) { $("rp-title").textContent = "Session not found"; $("rp-sum").textContent = "Session " + id; RP = null; $("rp-time").hidden = $("rp-xy").hidden = true; $("rp-empty").hidden = false; return; }
+    var live = REC.on && REC.s && REC.s.id === id;
+    if (live) await recFlush(false);
+    var d = await loadRows(live ? REC.s : s);
+    if (live) s = REC.s;
+    var gaps = [];
+    for (var i = 1; i < d.n; i++) if (d.t[i] - d.t[i - 1] > GAP_MS) gaps.push([d.t[i - 1] / 1000, d.t[i] / 1000]);
+    var segs = [], cur = null;
+    for (i = 0; i < d.n; i++) {
+      var c = d.code[i] === 255 ? null : d.code[i], tt = d.t[i] / 1000;
+      if (cur && i && d.t[i] - d.t[i - 1] > GAP_MS) { cur.b = d.t[i - 1] / 1000 + 0.1; segs.push(cur); cur = null; }
+      if (!cur || cur.c !== c) { if (cur) { cur.b = tt; segs.push(cur); } cur = { a: tt, c: c }; }
+    }
+    if (cur) { cur.b = d.t[d.n - 1] / 1000 + 0.1; segs.push(cur); }
+    var dur = d.n ? Math.max(1, d.t[d.n - 1] / 1000 + 0.1) : 1, rmax = 0;
+    for (i = 0; i < d.n; i++) if (d.rpm[i] > rmax) rmax = d.rpm[i];
+    var keepView = RP && RP.s.id === id ? RP.view : "t";
+    RP = { s: s, d: d, dur: dur, A: 0, B: dur, cur: (s.marks && s.marks.length ? s.marks[0].t / 1000 : dur / 2), gaps: gaps, segs: segs, view: keepView, xyWin: false, xyNZ: false,
+      rmax: Math.max(3000, Math.ceil(rmax / 1000) * 1000) };
+    var gt = 0; gaps.forEach(function (g) { gt += g[1] - g[0]; });
+    $("rp-title").textContent = dateStr(s.start, true);
+    $("rp-sum").textContent = "Session " + s.id + " · " + hms(dur) + " · " + thou(d.n) + " samples · " + (s.marks || []).length + " marker" + ((s.marks || []).length === 1 ? "" : "s") + (gaps.length ? " · " + gaps.length + " gap" + (gaps.length > 1 ? "s" : "") + " in the data" : "") + (s.recovered ? " · recovered" : "") + (s.relay ? " · ignition relay warning" : "");
+    $("rp-empty").hidden = !!d.n;
+    setView(RP.view);
+    renderMarks();
+  }
+  function setView(v) {
+    if (!RP) return;
+    RP.view = v;
+    $("tab-t").classList.toggle("on", v === "t"); $("tab-xy").classList.toggle("on", v === "xy");
+    $("rp-time").hidden = v !== "t" || !RP.d.n; $("rp-xy").hidden = v !== "xy" || !RP.d.n;
+    if (RP.d.n) { if (v === "t") drawTime(); else renderXY(); }
+  }
+  $("tab-t").addEventListener("click", function () { setView("t"); });
+  $("tab-xy").addEventListener("click", function () { setView("xy"); });
+  function idxAt(sec) {
+    var d = RP.d, i = lowerBound(d.t, d.n, sec * 1000);
+    if (i >= d.n) i = d.n - 1;
+    if (i > 0 && Math.abs(d.t[i - 1] - sec * 1000) <= Math.abs(d.t[i] - sec * 1000)) i--;
+    return i;
+  }
+  function inGap(sec) { for (var i = 0; i < RP.gaps.length; i++) if (sec > RP.gaps[i][0] + 0.15 && sec < RP.gaps[i][1] - 0.15) return RP.gaps[i]; return null; }
+  function rpSchedule() { if (rpRaf) return; rpRaf = requestAnimationFrame(function () { rpRaf = 0; drawTime(); }); }
+  function setWin(a, b) {
+    var span = Math.max(Math.min(5, RP.dur), Math.min(RP.dur, b - a));
+    var mid = (a + b) / 2; a = mid - span / 2; b = mid + span / 2;
+    if (a < 0) { b -= a; a = 0; } if (b > RP.dur) { a -= b - RP.dur; b = RP.dur; } if (a < 0) a = 0;
+    RP.A = a; RP.B = b; rpSchedule();
+  }
+  function setCur(sec) { RP.cur = Math.max(0, Math.min(RP.dur, sec)); rpSchedule(); }
+  var G = {};   // chart geometry for gestures
+  function drawTime() {
+    if (!RP || !RP.d.n || SCREEN !== "replay" || RP.view !== "t") return;
+    renderReadout(); renderChart(); renderAux(); renderOverview();
+    $("z-lbl").innerHTML = "<b>" + hms(RP.A) + "–" + hms(RP.B) + "</b><br>" + (RP.B - RP.A < 60 ? (RP.B - RP.A).toFixed(1) + " s" : hms(RP.B - RP.A)) + " of " + hms(RP.dur);
+    $("xy-win").textContent = hms(RP.A) + "–" + hms(RP.B);
+    var rows = document.querySelectorAll("#mks .row");
+    for (var i = 0; i < rows.length; i++) rows[i].classList.toggle("cur", Math.abs(+rows[i].getAttribute("data-t") - RP.cur) < 0.6);
+  }
+  function renderReadout() {
+    var d = RP.d, g = inGap(RP.cur), i = idxAt(RP.cur), c = d.code[i];
+    var v = function (x, n) { return g ? "—" : fmt(x, n); };
+    var rf = !g && d.fl[i] & FLAG_RELAY;
+    var cell = function (lab, val, u, cls) { return '<div class="k' + (cls ? " " + cls : "") + '">' + lab + '<b class="num">' + val + (u ? " <u>" + u + "</u>" : "") + "</b></div>"; };
+    $("ro").innerHTML = cell("Cursor", hms(RP.cur, 1), "", "tm") + cell("Time of day", clock(new Date(RP.s.start + RP.cur * 1000)), "") +
+      cell("Engine speed", g ? "—" : thou(d.rpm[i]), "rpm") + cell("Duty cycle", v(d.dl[i], 1), "%") + cell("Ignition advance", v(d.adv[i], 1), "°") +
+      cell("Fault code", g ? "No data (gap " + (g[1] - g[0]).toFixed(1) + " s)" : c === 255 ? "None" : codeName(c), "", !g && c !== 255 ? (isAmber(c) ? "warn" : "bad") : "") +
+      cell("Ignition (KL15)", v(d.k15[i], 2), "V", rf ? "bad" : "") + cell("Battery (KL30)", v(d.k30[i], 2), "V") +
+      cell("Burn", v(d.bv[i], 0) + " V · " + v(d.bms[i], 2), "ms") + cell("Dwell", v(d.dw[i], 2), "ms") +
+      cell("Spark peak", (!g && d.sp[i] && d.spf[i] & SP_PEAK_SAT && Number.isFinite(d.pk[i]) ? "≥ " : "") + v(d.pk[i], 0), "V") + (rf ? cell("Ignition relay", "Warning", "", "bad") : "");
+  }
+  // min/max decimation per half-pixel column, broken at gaps (> 0.5 s): never interpolated
+  function seriesD(arr, i0, i1, X, Y) {
+    var d = RP.d, out = "", px = null, mn, mx, imn, imx, pen = "M";
+    function flush() {
+      if (px === null) return;
+      var a = imn <= imx ? mn : mx, b = imn <= imx ? mx : mn;
+      out += pen + px.toFixed(1) + " " + Y(a).toFixed(1); pen = "L";
+      if (a !== b) out += "L" + px.toFixed(1) + " " + Y(b).toFixed(1);
+    }
+    for (var i = i0; i <= i1; i++) {
+      var v = arr[i];
+      if (!Number.isFinite(v)) { flush(); px = null; pen = "M"; continue; }
+      if (i > i0 && d.t[i] - d.t[i - 1] > GAP_MS) { flush(); px = null; pen = "M"; }
+      var x = Math.round(X(d.t[i] / 1000) * 2) / 2;
+      if (x !== px) { flush(); px = x; mn = mx = v; imn = imx = i; }
+      else { if (v < mn) { mn = v; imn = i; } if (v > mx) { mx = v; imx = i; } }
+    }
+    flush();
+    return out;
+  }
+  function tickStep(span) { var c = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200]; for (var i = 0; i < c.length; i++) if (span / c[i] <= 5) return c[i]; return 14400; }
+  function renderChart() {
+    var P = pal(), el = $("ch-main"), W = Math.max(200, el.clientWidth), PL = 32, PR = 34, PT = 18, PH = 200, A = RP.A, B = RP.B, d = RP.d;
+    var X = function (s) { return PL + (s - A) / (B - A) * (W - PL - PR); };
+    // marker labels: greedy layout in up to 2 rows, truncated so they never overlap
+    var LB = [], rowEnd = [-1e9, -1e9], CW = P.f === "RW Plex" ? 6.1 : P.f === "RW Barlow" ? 5.0 : 5.7;
+    (RP.s.marks || []).forEach(function (m) {
+      var mt = m.t / 1000; if (mt < A || mt > B) return;
+      var x = X(mt), full = m.n + (m.l ? " " + m.l : ""), lx = x - 1, row = -1, txt2 = full, w;
+      for (var r = 0; r < 2 && row < 0; r++) {
+        if (rowEnd[r] + 3 > lx) continue;
+        var room = W - PR + 30 - lx, chars = Math.floor((room - 10) / CW);
+        if (chars < m.n.length) continue;
+        txt2 = full.length > chars ? (chars > m.n.length + 2 ? full.slice(0, chars - 1) + "…" : m.n) : full;
+        row = r;
+      }
+      if (row < 0) { LB.push({ x: x, row: -1 }); return; }
+      w = txt2.length * CW + 10; rowEnd[row] = lx + w;
+      LB.push({ x: x, lx: lx, w: w, t: txt2, row: row });
+    });
+    // shrink a label if the next label in the same row starts before it ends
+    for (var li = 0; li < LB.length; li++) for (var lj = li + 1; lj < LB.length; lj++) if (LB[li].row >= 0 && LB[lj].row === LB[li].row) {
+      var lim = LB[lj].lx - 3 - LB[li].lx; if (LB[li].w > lim) { var ch2 = Math.max(0, Math.floor((lim - 10) / CW)); var mn2 = LB[li].t.split(" ")[0]; LB[li].t = ch2 >= LB[li].t.length ? LB[li].t : ch2 > mn2.length + 2 ? LB[li].t.slice(0, ch2 - 1) + "…" : mn2; LB[li].w = LB[li].t.length * CW + 10; } break;
+    }
+    if (LB.some(function (q) { return q.row === 1; })) PT = 34;
+    var YD = function (v) { return PT + (1 - Math.max(0, Math.min(100, v)) / 100) * PH; }, YR = function (v) { return PT + (1 - Math.max(0, Math.min(RP.rmax, v)) / RP.rmax) * PH; };
+    var cy = PT + PH + 22, H = cy + 18;
+    G.main = { W: W, PL: PL, PR: PR, X: X };
+    $("ch-lg").innerHTML = '<span><i style="background:' + P.duty + '"></i>Duty cycle, % (left)</span><span><i style="background:' + P.rpm + '"></i>Engine speed, rpm (right)</span><span><i style="background:' + P.mk + ';height:8px;width:2px"></i>Marker</span>';
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '"><defs>' + hatch("rgh", P.gap) + '<clipPath id="rpc"><rect x="' + PL + '" y="' + PT + '" width="' + (W - PL - PR) + '" height="' + PH + '"/></clipPath>' +
+      (P.glow ? '<filter id="rgl" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' : "") + "</defs>";
+    s += '<rect x="' + PL + '" y="' + PT + '" width="' + (W - PL - PR) + '" height="' + PH + '" fill="transparent"/>';
+    [0, 25, 50, 75, 100].forEach(function (v, i) {
+      var y = YD(v);
+      s += '<line x1="' + PL + '" y1="' + y + '" x2="' + (W - PR) + '" y2="' + y + '" stroke="' + (i % 2 ? P.grid2 : P.grid) + '"/>' + txt(PL - 5, y + 3.5, v, { a: "end", c: P.dutyT, f: P.f });
+    });
+    for (var r = 0; r <= RP.rmax; r += RP.rmax > 4000 ? 2000 : 1000) s += txt(W - PR + 5, YR(r) + 3.5, r ? r / 1000 + "k" : "0", { c: P.rpmT, f: P.f });
+    s += txt(PL - 5, 9, "%", { a: "end", s: 8.5, w: 700, c: P.dutyT, f: P.f }) + txt(W - PR + 5, 9, "rpm", { s: 8.5, w: 700, c: P.rpmT, f: P.f });
+    var st = tickStep(B - A);
+    for (var t = Math.ceil(A / st) * st; t <= B + 1e-9; t += st) s += '<line x1="' + X(t).toFixed(1) + '" y1="' + PT + '" x2="' + X(t).toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.grid2 + '"/>' + txt(X(t), PT + PH + 12, hms(t), { a: "middle", c: P.txt, f: P.f });
+    RP.gaps.forEach(function (g) {
+      if (g[1] < A || g[0] > B) return;
+      var x0 = Math.max(PL, X(g[0])), x1 = Math.min(W - PR, X(g[1])), xm = (x0 + x1) / 2;
+      s += '<rect x="' + x0.toFixed(1) + '" y="' + PT + '" width="' + Math.max(1.5, x1 - x0).toFixed(1) + '" height="' + PH + '" fill="url(#rgh)"/>';
+      if (x1 - x0 > 18) s += txt(xm, PT + PH - 6, "No data", { a: "middle", s: 9, w: 700, c: P.gap, f: P.f }) + txt(xm, PT + 30, (g[1] - g[0]).toFixed(1) + " s", { a: "middle", s: 8.5, w: 700, c: P.gap, f: P.f });
+    });
+    var i0 = Math.max(0, lowerBound(d.t, d.n, A * 1000) - 1), i1 = Math.min(d.n - 1, lowerBound(d.t, d.n, B * 1000));
+    var gl = P.glow ? ' filter="url(#rgl)"' : "";
+    s += '<g clip-path="url(#rpc)"><path d="' + seriesD(d.dl, i0, i1, X, YD) + '" fill="none" stroke="' + P.duty + '" stroke-width="1.5" stroke-linejoin="round"' + gl + "/>" +
+      '<path d="' + seriesD(d.rpm, i0, i1, X, YR) + '" fill="none" stroke="' + P.rpm + '" stroke-width="1.6" stroke-linejoin="round"' + gl + "/></g>";
+    LB.forEach(function (q) {
+      var ly = q.row === 1 ? PT - 15 : PT - (LB.some(function (z) { return z.row === 1; }) ? 31 : 15);
+      s += '<line x1="' + q.x.toFixed(1) + '" y1="' + (q.row >= 0 ? ly + 1 : PT - 2) + '" x2="' + q.x.toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.mk + '" stroke-width="1.2" stroke-dasharray="4 3"/>';
+      if (q.row >= 0) s += '<rect x="' + q.lx.toFixed(1) + '" y="' + ly + '" width="' + q.w.toFixed(1) + '" height="14" rx="2" fill="' + P.mk + '"/>' + txt(q.lx + 5, ly + 10, q.t, { s: 9.5, w: 700, c: P.mkT, f: P.f });
+    });
+    if (RP.cur >= A && RP.cur <= B) {
+      var i = idxAt(RP.cur), xc = X(RP.cur), g = inGap(RP.cur);
+      s += '<line x1="' + xc.toFixed(1) + '" y1="' + PT + '" x2="' + xc.toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.cur + '" stroke-width="1.3"/>';
+      if (!g) s += '<circle cx="' + xc.toFixed(1) + '" cy="' + YD(d.dl[i]).toFixed(1) + '" r="4.2" fill="' + P.bg + '" stroke="' + P.duty + '" stroke-width="2"/><circle cx="' + xc.toFixed(1) + '" cy="' + YR(d.rpm[i]).toFixed(1) + '" r="4.2" fill="' + P.bg + '" stroke="' + P.rpm + '" stroke-width="2"/>';
+      var lx2 = Math.max(0, Math.min(W - 54, xc - 27));
+      s += '<rect x="' + lx2.toFixed(1) + '" y="' + (PT + PH + 2) + '" width="54" height="14" rx="4" fill="' + P.cur + '"/>' + txt(lx2 + 27, PT + PH + 12.5, hms(RP.cur, 1), { a: "middle", w: 700, c: P.curT, f: P.mono });
+    }
+    s += txt(PL - 5, cy + 11, "COD", { a: "end", s: 8.5, w: 700, c: P.txt, f: P.f });
+    RP.segs.forEach(function (q) {
+      if (q.b < A || q.a > B) return;
+      var x0 = X(Math.max(A, q.a)), x1 = X(Math.min(B, q.b)); if (x1 - x0 < 0.4) return;
+      var fill = q.c === null ? P.none : isAmber(q.c) ? P.warn : P.bad;
+      s += '<rect x="' + x0.toFixed(1) + '" y="' + cy + '" width="' + (x1 - x0).toFixed(1) + '" height="16" rx="3" fill="' + fill + '"/>';
+      var lab = q.c === null ? "No code" : codeName(q.c) + (x1 - x0 > 60 && CODE_BY[q.c] ? " · " + CODE_BY[q.c].tag : "");
+      if (x1 - x0 > (q.c === null ? 50 : 24)) s += txt(x0 + 5, cy + 11.5, lab, { w: 700, c: q.c === null ? P.noneT : isAmber(q.c) ? P.warnT : P.badT, f: P.f });
+    });
+    RP.gaps.forEach(function (g) { if (g[1] < A || g[0] > B) return; var x0 = X(Math.max(A, g[0])), x1 = X(Math.min(B, g[1])); s += '<rect x="' + x0.toFixed(1) + '" y="' + cy + '" width="' + Math.max(1.5, x1 - x0).toFixed(1) + '" height="16" fill="url(#rgh)"/>'; });
+    el.innerHTML = s + "</svg>";
+  }
+  function renderOverview() {
+    var P = pal(), el = $("ch-ov"), W = Math.max(200, el.clientWidth), PL = 32, PR = 34, OH = 26, oy = 6, H = oy + OH + 14, d = RP.d;
+    var OX = function (q) { return PL + q / RP.dur * (W - PL - PR); };
+    G.ov = { W: W, PL: PL, PR: PR, OX: OX };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '">' + txt(PL - 5, oy + 16, "All", { a: "end", s: 8.5, w: 700, c: P.txt, f: P.f });
+    s += '<rect x="' + PL + '" y="' + oy + '" width="' + (W - PL - PR) + '" height="' + OH + '" rx="4" fill="' + P.none + '"/>';
+    RP.segs.forEach(function (q) { if (q.c !== null) s += '<rect x="' + OX(q.a).toFixed(1) + '" y="' + (oy + OH - 3) + '" width="' + Math.max(1, OX(q.b) - OX(q.a)).toFixed(1) + '" height="3" fill="' + (isAmber(q.c) ? P.warn : P.bad) + '"/>'; });
+    if (!RP.ovPath || RP.ovW !== W || RP.ovTheme !== P.rpm) { RP.ovPath = seriesD(d.rpm, 0, d.n - 1, OX, function (v) { return oy + 2 + (1 - Math.min(RP.rmax, v) / RP.rmax) * (OH - 6); }); RP.ovW = W; RP.ovTheme = P.rpm; }
+    s += '<path d="' + RP.ovPath + '" fill="none" stroke="' + P.rpm + '" stroke-opacity=".75" stroke-width="1"/>';
+    (RP.s.marks || []).forEach(function (m) { var x = OX(m.t / 1000); s += '<line x1="' + x.toFixed(1) + '" y1="' + oy + '" x2="' + x.toFixed(1) + '" y2="' + (oy + OH) + '" stroke="' + P.mk + '"/>'; });
+    RP.gaps.forEach(function (g) { s += '<rect x="' + OX(g[0]).toFixed(1) + '" y="' + oy + '" width="' + Math.max(2, OX(g[1]) - OX(g[0])).toFixed(1) + '" height="' + OH + '" fill="' + P.gap + '" opacity=".55"/>'; });
+    var a = OX(RP.A), b = OX(RP.B);
+    s += '<rect x="' + a.toFixed(1) + '" y="' + (oy - 1) + '" width="' + Math.max(2, b - a).toFixed(1) + '" height="' + (OH + 2) + '" rx="4" fill="' + P.brush + '" fill-opacity=".1" stroke="' + P.brush + '" stroke-width="1.4"/>';
+    [a, b].forEach(function (x) { s += '<rect x="' + (x - 3).toFixed(1) + '" y="' + (oy + 6) + '" width="6" height="' + (OH - 12) + '" rx="2" fill="' + P.brush + '"/>'; });
+    var xc = OX(RP.cur); s += '<line x1="' + xc.toFixed(1) + '" y1="' + oy + '" x2="' + xc.toFixed(1) + '" y2="' + (oy + OH) + '" stroke="' + P.cur + '" stroke-opacity=".7"/>';
+    s += txt(PL, oy + OH + 12, "00:00", { s: 9, c: P.txt, f: P.f }) + txt(W - PR, oy + OH + 12, hms(RP.dur), { s: 9, c: P.txt, f: P.f, a: "end" });
+    el.innerHTML = s + "</svg>";
+  }
+  function renderMarks() {
+    var ms = RP.s.marks || [], d = RP.d;
+    $("mks").innerHTML = ms.length ? ms.map(function (m) {
+      var i = d.n ? idxAt(m.t / 1000 + 0.05) : -1;
+      return '<button type="button" class="row" data-t="' + (m.t / 1000) + '"><span class="n">' + esc(m.n) + '</span><span class="t">' + hms(m.t / 1000, 1) + '</span><span class="l">' + esc(m.l || "—") + '</span><span class="v">' +
+        (i >= 0 ? thou(d.rpm[i]) + " rpm · " + fmt(d.dl[i], 1) + " % · ignition " + fmt(d.k15[i], 1) + " V" + (d.fl[i] & FLAG_RELAY ? " · relay warning" : "") : "") + "</span></button>";
+    }).join("") : '<div class="none">No markers in this session.</div>';
+  }
+  $("mks").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".row[data-t]"); if (!b || !RP) return;
+    var t = +b.getAttribute("data-t"), span = RP.B - RP.A;
+    RP.cur = t; setWin(t - span / 2, t + span / 2);
+  });
+  document.querySelector("#chart .zoom").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-z]"); if (!b || !RP) return;
+    var z = b.getAttribute("data-z"), span = RP.B - RP.A, c = RP.cur >= RP.A && RP.cur <= RP.B ? RP.cur : (RP.A + RP.B) / 2;
+    if (z === "in") { var f2 = (c - RP.A) / span, ns = span / 2; setWin(c - f2 * ns, c - f2 * ns + ns); }
+    else if (z === "out") setWin((RP.A + RP.B) / 2 - span, (RP.A + RP.B) / 2 + span);
+    else if (z === "all") setWin(0, RP.dur);
+    else if (z === "left") setWin(RP.A - span / 2, RP.B - span / 2);
+    else if (z === "right") setWin(RP.A + span / 2, RP.B + span / 2);
+  });
+  $("rp-csv").addEventListener("click", function () { if (RP && RP.d.n) exportCsv(RP.s.id); });
+
+  /* ---------- gestures: chart (cursor drag, pan, pinch, wheel) and overview (brush) ---------- */
+  var GP = { pts: new Map(), mode: null, st: null };
+  function rpGestureReset() { GP.pts.clear(); GP.mode = null; }
+  function svgX(el, clientX, W) { var r = el.getBoundingClientRect(); return (clientX - r.left) * (W / (r.width || W)); }
+  function mainTime(x) { var g = G.main; return RP.A + (x - g.PL) / (g.W - g.PL - g.PR) * (RP.B - RP.A); }
+  var chM = $("ch-main");
+  chM.addEventListener("pointerdown", function (ev) {
+    if (!RP || !G.main) return;
+    try { chM.setPointerCapture(ev.pointerId); } catch (e) {}
+    var x = svgX(chM, ev.clientX, G.main.W);
+    GP.pts.set(ev.pointerId, x);
+    if (GP.pts.size === 1) {
+      var near = Math.abs(x - G.main.X(RP.cur)) < 18 && RP.cur >= RP.A && RP.cur <= RP.B;
+      GP.mode = near ? "cur" : "pan"; GP.st = { x: x, A: RP.A, B: RP.B, moved: false };
+      if (near) setCur(mainTime(x));
+    } else if (GP.pts.size === 2) {
+      var xs = Array.from(GP.pts.values());
+      GP.mode = "pinch"; GP.st = { d: Math.max(10, Math.abs(xs[0] - xs[1])), mid: (xs[0] + xs[1]) / 2, A: RP.A, B: RP.B, tm: mainTime((xs[0] + xs[1]) / 2) };
+    }
+  });
+  chM.addEventListener("pointermove", function (ev) {
+    if (!GP.pts.has(ev.pointerId) || !RP) return;
+    var x = svgX(chM, ev.clientX, G.main.W); GP.pts.set(ev.pointerId, x);
+    var pw = G.main.W - G.main.PL - G.main.PR;
+    if (GP.mode === "cur") setCur(mainTime(x));
+    else if (GP.mode === "pan") {
+      if (Math.abs(x - GP.st.x) > 4) GP.st.moved = true;
+      if (GP.st.moved) { var dt = -(x - GP.st.x) / pw * (GP.st.B - GP.st.A); setWin(GP.st.A + dt, GP.st.B + dt); }
+    } else if (GP.mode === "pinch" && GP.pts.size >= 2) {
+      var xs = Array.from(GP.pts.values()), dd = Math.max(10, Math.abs(xs[0] - xs[1])), mid = (xs[0] + xs[1]) / 2;
+      var span = (GP.st.B - GP.st.A) * GP.st.d / dd, fr = (mid - G.main.PL) / pw;
+      setWin(GP.st.tm - fr * span, GP.st.tm - fr * span + span);
+    }
+  });
+  function chUp(ev) {
+    if (!GP.pts.has(ev.pointerId)) return;
+    var x = GP.pts.get(ev.pointerId);
+    GP.pts.delete(ev.pointerId);
+    if (GP.mode === "pan" && GP.st && !GP.st.moved && RP && ev.type === "pointerup") setCur(mainTime(x));
+    if (GP.pts.size === 1 && GP.mode === "pinch") { var x2 = GP.pts.values().next().value; GP.mode = "pan"; GP.st = { x: x2, A: RP.A, B: RP.B, moved: true }; }
+    else if (!GP.pts.size) GP.mode = null;
+  }
+  chM.addEventListener("pointerup", chUp); chM.addEventListener("pointercancel", chUp);
+  chM.addEventListener("wheel", function (ev) {
+    if (!RP || !G.main) return; ev.preventDefault();
+    var x = svgX(chM, ev.clientX, G.main.W), tm = mainTime(x), k = ev.deltaY > 0 ? 1.25 : 0.8, span = (RP.B - RP.A) * k, fr = (tm - RP.A) / (RP.B - RP.A);
+    setWin(tm - fr * span, tm - fr * span + span);
+  }, { passive: false });
+  var chO = $("ch-ov"), OVP = { id: null, mode: null, x0: 0, A: 0, B: 0 };
+  chO.addEventListener("pointerdown", function (ev) {
+    if (!RP || !G.ov) return;
+    try { chO.setPointerCapture(ev.pointerId); } catch (e) {}
+    var x = svgX(chO, ev.clientX, G.ov.W), a = G.ov.OX(RP.A), b = G.ov.OX(RP.B);
+    OVP.id = ev.pointerId; OVP.x0 = x; OVP.A = RP.A; OVP.B = RP.B;
+    if (Math.abs(x - a) < 10) OVP.mode = "l"; else if (Math.abs(x - b) < 10) OVP.mode = "r";
+    else if (x > a && x < b) OVP.mode = "move";
+    else { var tm = (x - G.ov.PL) / (G.ov.W - G.ov.PL - G.ov.PR) * RP.dur, sp = RP.B - RP.A; setWin(tm - sp / 2, tm + sp / 2); OVP.mode = "move"; OVP.A = tm - sp / 2; OVP.B = tm + sp / 2; }
+  });
+  chO.addEventListener("pointermove", function (ev) {
+    if (OVP.id !== ev.pointerId || !RP) return;
+    var x = svgX(chO, ev.clientX, G.ov.W), dt = (x - OVP.x0) / (G.ov.W - G.ov.PL - G.ov.PR) * RP.dur;
+    if (OVP.mode === "move") setWin(OVP.A + dt, OVP.B + dt);
+    else if (OVP.mode === "l") setWin(Math.min(OVP.A + dt, OVP.B - 5), OVP.B);
+    else if (OVP.mode === "r") setWin(OVP.A, Math.max(OVP.B + dt, OVP.A + 5));
+  });
+  function ovUp(ev) { if (OVP.id === ev.pointerId) { OVP.id = null; OVP.mode = null; } }
+  chO.addEventListener("pointerup", ovUp); chO.addEventListener("pointercancel", ovUp);
+
+
+  /* ---------- v1: auxiliary replay chart (supply / spark channels from 6a7e1003) ---------- */
+  var AUX = {
+    kl: { lab: "Ignition (KL15) and battery (KL30), V", u: "V", s: [["k15", "ok", "KL15"], ["k30", "info", "KL30"]], dec: 2 },
+    adv: { lab: "Ignition advance, degrees", u: "°", s: [["adv", "mk", "Advance"]], dec: 1 },
+    bms: { lab: "Burn time, ms", u: "ms", s: [["bms", "duty", "Burn"]], dec: 2 },
+    bv: { lab: "Burn voltage, V", u: "V", s: [["bv", "duty", "Burn V"]], dec: 1 },
+    dw: { lab: "Dwell time, ms", u: "ms", s: [["dw", "rpm", "Dwell"]], dec: 2 },
+    pk: { lab: "Spark peak, V · ▲ above the measuring range", u: "V", s: [["pk", "warn", "Peak"]], dec: 0 },
+    rd: { lab: "Ignition relay drop above the baseline, V · warning above 0.4 V", u: "V", s: [["rd", "bad", "Relay drop"]], dec: 2 }
+  };
+  var auxSel = "kl";
+  function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim() || "#888"; }
+  function renderAux() {
+    var el = $("ch-aux"); if (!el || !RP || !G.main) return;
+    var P = pal(), d = RP.d, cfg = AUX[auxSel], W = G.main.W, PL = G.main.PL, PR = G.main.PR, X = G.main.X, A = RP.A, B = RP.B, PT = 16, PH = 92, H = PT + PH + 6;
+    var i0 = Math.max(0, lowerBound(d.t, d.n, A * 1000) - 1), i1 = Math.min(d.n - 1, lowerBound(d.t, d.n, B * 1000));
+    var mn = Infinity, mx = -Infinity;
+    cfg.s.forEach(function (sr) { var a = d[sr[0]]; for (var i = i0; i <= i1; i++) if (Number.isFinite(a[i])) { if (a[i] < mn) mn = a[i]; if (a[i] > mx) mx = a[i]; } });
+    var none = !Number.isFinite(mn);
+    if (auxSel === "rd" && !none) { mn = Math.min(mn, 0); mx = Math.max(mx, 0.5); }
+    if (none) { mn = 0; mx = 1; }
+    var m = (mx - mn) * 0.12 || Math.max(0.1, Math.abs(mx) * 0.05); mn -= m; mx += m;
+    var Y = function (v) { return PT + (1 - (Math.max(mn, Math.min(mx, v)) - mn) / (mx - mn)) * PH; };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '"><defs>' + hatch("rah", P.gap) + '<clipPath id="rac"><rect x="' + PL + '" y="' + PT + '" width="' + (W - PL - PR) + '" height="' + PH + '"/></clipPath></defs>';
+    s += '<rect x="' + PL + '" y="' + PT + '" width="' + (W - PL - PR) + '" height="' + PH + '" fill="transparent"/>';
+    for (var k = 0; k <= 2; k++) { var vv = mn + (mx - mn) * k / 2, y = Y(vv); s += '<line x1="' + PL + '" y1="' + y.toFixed(1) + '" x2="' + (W - PR) + '" y2="' + y.toFixed(1) + '" stroke="' + (k === 1 ? P.grid2 : P.grid) + '"/>' + txt(PL - 5, y + 3.5, fmt(vv, Math.abs(mx - mn) < 3 ? 1 : 0), { a: "end", c: P.txt, f: P.f, s: 8.5 }); }
+    s += txt(PL, 10, cfg.lab, { c: P.txt, f: P.f, s: 9, w: 700 });
+    // relay fault spans (1001 flags bit3)
+    var ra = -1, i;
+    function rspan(a, b) { var xa = Math.max(PL, X(d.t[a] / 1000)), xb = Math.min(W - PR, X(d.t[b] / 1000 + 0.1)); s += '<rect x="' + xa.toFixed(1) + '" y="' + (PT + PH - 4) + '" width="' + Math.max(1.5, xb - xa).toFixed(1) + '" height="4" fill="' + P.bad + '"/>'; }
+    for (i = i0; i <= i1; i++) {
+      var on = !!(d.fl[i] & FLAG_RELAY), brk = ra >= 0 && i > ra && d.t[i] - d.t[i - 1] > GAP_MS;
+      if (ra >= 0 && (!on || brk)) { rspan(ra, i - 1); ra = -1; }
+      if (on && ra < 0) ra = i;
+    }
+    if (ra >= 0) rspan(ra, i1);
+    RP.gaps.forEach(function (g) { if (g[1] < A || g[0] > B) return; var x0 = Math.max(PL, X(g[0])), x1 = Math.min(W - PR, X(g[1])); s += '<rect x="' + x0.toFixed(1) + '" y="' + PT + '" width="' + Math.max(1.5, x1 - x0).toFixed(1) + '" height="' + PH + '" fill="url(#rah)"/>'; });
+    if (auxSel === "rd" && 0.4 > mn && 0.4 < mx) s += '<line x1="' + PL + '" y1="' + Y(0.4).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + Y(0.4).toFixed(1) + '" stroke="' + P.bad + '" stroke-dasharray="4 3"/>' + txt(W - PR - 2, Y(0.4) - 3, "0.4 V", { a: "end", c: P.bad, f: P.f, s: 8.5, w: 700 });
+    var lg = "";
+    s += '<g clip-path="url(#rac)">';
+    cfg.s.forEach(function (sr) { var col = cssVar("--" + sr[1]); s += '<path d="' + seriesD(d[sr[0]], i0, i1, X, Y) + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-linejoin="round"/>'; lg += '<tspan fill="' + col + '">■ ' + sr[2] + "  </tspan>"; });
+    if (auxSel === "pk") { var lastX = -9; for (i = i0; i <= i1; i++) if (d.sp[i] && (d.spf[i] & SP_PEAK_SAT) && Number.isFinite(d.pk[i])) { var xs = X(d.t[i] / 1000); if (xs - lastX < 4) continue; lastX = xs; s += '<path d="M' + xs.toFixed(1) + " " + (PT + 2) + "l3 5h-6z" + '" fill="' + P.warn + '"/>'; } }
+    s += "</g>";
+    s += '<text x="' + (W - PR) + '" y="10" text-anchor="end" font-size="9" font-weight="700" font-family="' + P.f + '">' + lg + "</text>";
+    if (none) s += txt((PL + W - PR) / 2, PT + PH / 2 + 4, d.sp && Array.prototype.some.call(d.sp, function (z) { return z; }) ? "No values in this window" : "This session has no spark data", { a: "middle", c: P.txt, f: P.f, s: 10 });
+    (RP.s.marks || []).forEach(function (mk) { var mt = mk.t / 1000; if (mt < A || mt > B) return; var x = X(mt); s += '<line x1="' + x.toFixed(1) + '" y1="' + PT + '" x2="' + x.toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.mk + '" stroke-width="1" stroke-dasharray="4 3"/>'; });
+    if (RP.cur >= A && RP.cur <= B) {
+      var ic = idxAt(RP.cur), xc = X(RP.cur), gg = inGap(RP.cur);
+      s += '<line x1="' + xc.toFixed(1) + '" y1="' + PT + '" x2="' + xc.toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.cur + '" stroke-width="1.3"/>';
+      if (!gg) cfg.s.forEach(function (sr) { var vv2 = d[sr[0]][ic]; if (Number.isFinite(vv2)) s += '<circle cx="' + xc.toFixed(1) + '" cy="' + Y(vv2).toFixed(1) + '" r="3.6" fill="' + P.bg + '" stroke="' + cssVar("--" + sr[1]) + '" stroke-width="2"/>'; });
+    }
+    el.innerHTML = s + "</svg>";
+    G.aux = { W: W };
+  }
+  $("aux-chips").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-a]"); if (!b) return;
+    auxSel = b.getAttribute("data-a");
+    var bs = $("aux-chips").querySelectorAll("button"); for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("on", bs[i] === b);
+    if (RP) renderAux();
+  });
+  (function () {
+    var ax = $("ch-aux"), drag = null;
+    ax.addEventListener("pointerdown", function (ev) { if (!RP || !G.main) return; try { ax.setPointerCapture(ev.pointerId); } catch (e) {} drag = ev.pointerId; setCur(mainTime(svgX(ax, ev.clientX, G.main.W))); });
+    ax.addEventListener("pointermove", function (ev) { if (drag !== ev.pointerId || !RP) return; setCur(mainTime(svgX(ax, ev.clientX, G.main.W))); });
+    function up(ev) { if (drag === ev.pointerId) drag = null; }
+    ax.addEventListener("pointerup", up); ax.addEventListener("pointercancel", up);
+  })();
+
+  /* ---------- XY duty vs RPM ---------- */
+  function tcol(q, stops) {
+    q = Math.max(0, Math.min(1, q));
+    var n = stops.length - 1, k = Math.min(n - 1, Math.floor(q * n)), fr = q * n - k;
+    var a = parseInt(stops[k].slice(1), 16), b = parseInt(stops[k + 1].slice(1), 16);
+    var ch = function (sh) { return Math.round((a >> sh & 255) + ((b >> sh & 255) - (a >> sh & 255)) * fr); };
+    return "rgb(" + ch(16) + "," + ch(8) + "," + ch(0) + ")";
+  }
+  function renderXY() {
+    if (!RP || !RP.d.n) return;
+    var P = pal(), el = $("xy"), W = Math.max(200, el.clientWidth - 12), d = RP.d, PL = 32, PR = 10, PT = 12, PH = 270, H = PT + PH + 30;
+    var A = RP.A * 1000, B = RP.B * 1000, idx = [], dmin = 100, dmax = 0, rmax = 0;
+    for (var i = 0; i < d.n; i++) {
+      if (RP.xyWin && (d.t[i] < A || d.t[i] > B)) continue;
+      if (RP.xyNZ && d.rpm[i] < 300) continue;
+      if (!Number.isFinite(d.dl[i]) || !Number.isFinite(d.rpm[i])) continue;
+      idx.push(i); dmin = Math.min(dmin, d.dl[i]); dmax = Math.max(dmax, d.dl[i]); rmax = Math.max(rmax, d.rpm[i]);
+    }
+    var chips = $("xy-chips").querySelectorAll("button");
+    chips[0].classList.toggle("on", !RP.xyWin); chips[1].classList.toggle("on", RP.xyWin); chips[2].classList.toggle("on", RP.xyNZ);
+    $("xy-win").textContent = hms(RP.A) + "–" + hms(RP.B);
+    var lo = Math.max(0, Math.floor((dmin - 2) / 5) * 5), hi = Math.min(100, Math.ceil((dmax + 2) / 5) * 5);
+    if (hi - lo < 20) { var mm = (hi + lo) / 2; lo = Math.max(0, Math.floor((mm - 10) / 5) * 5); hi = Math.min(100, lo + 20); }
+    var xr = Math.max(3000, Math.ceil(rmax / 500) * 500);
+    var X = function (v) { return PL + Math.max(0, Math.min(xr, v)) / xr * (W - PL - PR); }, Y = function (v) { return PT + (1 - (v - lo) / (hi - lo)) * PH; };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '">';
+    var ys = hi - lo > 40 ? 10 : 5;
+    for (var v = Math.ceil(lo / ys) * ys; v <= hi + 1e-9; v += ys) s += '<line x1="' + PL + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - PR) + '" y2="' + Y(v).toFixed(1) + '" stroke="' + (v % 10 ? P.grid2 : P.grid) + '"/>' + (v % 10 && ys === 5 ? "" : txt(PL - 5, Y(v) + 3.5, v, { a: "end", c: P.dutyT, f: P.f }));
+    var xs = xr > 4000 ? 1000 : 500;
+    for (v = 0; v <= xr + 1e-9; v += xs) s += '<line x1="' + X(v).toFixed(1) + '" y1="' + PT + '" x2="' + X(v).toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + (v % 1000 ? P.grid2 : P.grid) + '"/>' + (v % 1000 ? "" : txt(X(v), PT + PH + 13, thou(v), { a: "middle", c: P.rpmT, f: P.f }));
+    s += txt(W - PR, PT + PH + 26, "Engine speed, rpm →", { a: "end", w: 700, c: P.rpmT, f: P.f }) + txt(PL + 6, PT + 10, "↑ Duty cycle, %", { w: 700, c: P.dutyT, f: P.f });
+    var seen = {}, pts = [];
+    for (var j = idx.length - 1; j >= 0; j--) {   // newest wins per 1.5 px cell (bounded point count for long sessions)
+      i = idx[j]; var px = X(d.rpm[i]), py = Y(d.dl[i]), key = Math.round(px / 1.5) + "_" + Math.round(py / 1.5);
+      if (seen[key]) continue; seen[key] = 1; pts.push('<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="1.6" fill="' + tcol(d.t[i] / 1000 / RP.dur, P.grad) + '" fill-opacity=".6"/>');
+    }
+    s += pts.reverse().join("");
+    (RP.s.marks || []).forEach(function (m) {
+      var k = idxAt(m.t / 1000 + 0.05); if (RP.xyWin && (d.t[k] < A || d.t[k] > B)) return; if (RP.xyNZ && d.rpm[k] < 300) return;
+      s += '<circle cx="' + X(d.rpm[k]).toFixed(1) + '" cy="' + Y(d.dl[k]).toFixed(1) + '" r="6" fill="none" stroke="' + P.mk + '" stroke-width="1.8"/>' + txt(X(d.rpm[k]) + 8, Y(d.dl[k]) - 6, m.n, { w: 800, c: P.mk, f: P.f });
+    });
+    var c = idxAt(RP.cur);
+    if (!inGap(RP.cur)) {
+      var cx = X(d.rpm[c]), cyy = Y(d.dl[c]);
+      s += '<line x1="' + cx.toFixed(1) + '" y1="' + PT + '" x2="' + cx.toFixed(1) + '" y2="' + (PT + PH) + '" stroke="' + P.cur + '" stroke-opacity=".45" stroke-dasharray="2 3"/><line x1="' + PL + '" y1="' + cyy.toFixed(1) + '" x2="' + (W - PR) + '" y2="' + cyy.toFixed(1) + '" stroke="' + P.cur + '" stroke-opacity=".45" stroke-dasharray="2 3"/>';
+      s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cyy.toFixed(1) + '" r="4.5" fill="' + P.cur + '"/>';
+      var lab = hms(RP.cur, 1) + " · " + thou(d.rpm[c]) + " rpm · " + fmt(d.dl[c], 1) + " %", lw = lab.length * 5.4 + 12, lx = Math.max(PL, Math.min(cx - lw / 2, W - PR - lw)), ly = cyy - 26 < PT ? cyy + 10 : cyy - 26;
+      s += '<rect x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" width="' + lw.toFixed(1) + '" height="16" rx="4" fill="' + P.cur + '"/>' + txt(lx + 6, ly + 11, lab, { w: 700, c: P.curT, f: P.f });
+    }
+    el.innerHTML = s + '</svg><div class="xyleg"><span>time</span><span class="num">00:00</span><span class="gb" style="background:linear-gradient(90deg,' + P.grad.join(",") + ')"></span><span class="num">' + hms(RP.dur) + "</span></div>";
+    var bands = [[0, 300, "Below 300 · stopped"], [300, 1000, "300 – 1,000 · idle"], [1000, 1500, "1,000–1,500"], [1500, 2000, "1,500–2,000"], [2000, 3000, "2,000–3,000"], [3000, 4000, "3,000–4,000"], [4000, 1e9, "4,000 and above"]];
+    var h = "<tr><th>Engine speed, rpm</th><th>Samples</th><th>Average duty</th><th>Range</th></tr>", nb = 0;
+    bands.forEach(function (b, bi) {
+      var sum = 0, n = 0, mn = 999, mx = -1;
+      idx.forEach(function (k) { var r = d.rpm[k]; if (r >= b[0] && r < b[1]) { sum += d.dl[k]; n++; if (d.dl[k] < mn) mn = d.dl[k]; if (d.dl[k] > mx) mx = d.dl[k]; } });
+      if (!n) return; nb++;
+      h += '<tr><td><span class="sw" style="background:' + tcol(bi / 6, P.grad) + '"></span>' + b[2].replace(/ /g, "\u00a0") + "</td><td>" + thou(n) + '</td><td class="du">' + fmt(sum / n, 1) + " %</td><td>" + fmt(mn, 1) + "–" + fmt(mx, 1) + "</td></tr>";
+    });
+    $("bands").innerHTML = nb ? h : '<tr><td style="padding:12px">No samples for this selection.</td></tr>';
+    $("xy-n").textContent = thou(idx.length) + " points";
+  }
+  $("xy-chips").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-f]"); if (!b || !RP) return;
+    var fl = b.getAttribute("data-f");
+    if (fl === "all") RP.xyWin = false; else if (fl === "win") RP.xyWin = true; else RP.xyNZ = !RP.xyNZ;
+    renderXY();
+  });
+  function onThemeV5() {
+    renderRecOv();
+    if (SCREEN === "sessions") renderSessions();
+    if (SCREEN === "replay" && RP) { RP.ovPath = null; setView(RP.view); }
+  }
+  window.addEventListener("resize", function () { if (RP && SCREEN === "replay") { RP.ovPath = null; setView(RP.view); } renderRecOv(); });
+
+  async function v5Init() {
+    wakeAcquire();
+    try { db = await idbOpen(); await recoverSessions(); await countSessions(); }
+    catch (e) { db = null; dbErr = e && e.message || "storage not available"; log("e", "Recording is not available: " + dbErr); }
+    renderRec();
+    if (location.hash) route();
+  }
+  window.__jrV1 = { sp: function () { return sp; }, cfg: function () { return CFG; }, feedSpark: onSpark, aux: function () { return auxSel; } };
+  window.__jrV5 = { rec: function () { return REC; }, wake: function () { return WL.state; }, rp: function () { return RP; }, stop: recStop, flush: recFlush };
+
+  /* ---------------- init ---------------- */
+  if (DEMO) { window.__jrFeed = onPacket; window.__jrLamps = function () { return lampStates(nowMs()); }; startDemo(); }
+  else if (!navigator.bluetooth) noBluetooth();
+  renderLog();
+  renderLamps();
+  renderCfg(); renderIgn();
+  setInterval(function () { renderIgn(); }, 500);
+  route();
+  v5Init();
+})();
+</script>
+</body>
+</html>
