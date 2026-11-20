@@ -815,7 +815,9 @@ html[data-layout=phone] #pane-spark{min-height:0}
 html[data-layout=phone] #pane-spark .gauges{flex:none;padding:8px 0 2px;gap:6px}
 html[data-layout=phone] #pane-spark .gcell{flex:1 1 0}
 html[data-layout=phone] #pane-spark .dial{flex:none;max-height:none}
-html[data-layout=phone] #pane-spark .readout{font-size:19px}
+html[data-layout=phone] #pane-spark .readout{font-size:min(19px,4.9vw);max-width:100%;overflow:hidden;text-overflow:clip}
+html[data-layout=phone] #pane-spark .readout u{margin-left:2px;letter-spacing:.02em}
+html[data-layout=phone] #pane-spark .gcell{overflow:hidden}
 html[data-layout=phone] #pane-spark .glabel{font-size:9.5px;letter-spacing:.12em}
 html[data-layout=phone] #pane-spark .glabel em{display:block;text-align:center;margin-top:1px}
 html[data-layout=phone] #pane-spark .glabel em::before{content:none!important}
@@ -837,6 +839,8 @@ html[data-layout=phone] #pane-spark .legend{gap:8px;font-size:10.5px;margin-left
 html[data-layout=phone] #pane-spark .wave-actions{width:100%}
 html[data-layout=phone] #pane-spark .sbtn{height:30px;padding:0 10px}
 html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
+
+[data-theme=retro] #pane-spark .dial{filter:none}
 
 </style>
 </head>
@@ -1695,7 +1699,7 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     }
     function hood(id, S, depth) {
       var c = S / 2, r = S / 2 - 7;
-      return '<clipPath id="' + id + 'cl"><circle cx="' + c + '" cy="' + c + '" r="' + r + '"/></clipPath><g clip-path="url(#' + id + 'cl)"><rect x="0" y="0" width="' + S + '" height="' + (S * depth) + '" fill="url(#' + id + 'hd)"/></g>';
+      return "";
     }
     // W124 style dial (see mockups/retro_mercedes)
     function dial(o) {
@@ -3187,7 +3191,12 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     root.setAttribute("data-page-view", which);
     var dots = document.querySelectorAll(".page-dots button");
     for (var i = 0; i < dots.length; i++) dots[i].setAttribute("aria-current", dots[i].getAttribute("data-page") === which ? "true" : "false");
-    if (which === "spark") { renderWaveGauges(); renderWave(); renderAverages(); }
+    if (which === "spark") {
+      try { renderWaveGauges(); } catch (e) {}
+      try { renderWave(); } catch (e) {}
+      try { renderAverages(); } catch (e) {}
+      setTimeout(waveRelayout, 320);
+    }
   }
   function waveNoteTelem(p, t) { histPush(telemHist, p); }
   function waveNoteSpark(q, t) { var o = {}; for (var k in q) o[k] = q[k]; o.t = t; histPush(sparkHist, o); }
@@ -3303,7 +3312,7 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     return "M" + (-tail) + " " + (-w * 0.8) + " L0 " + (-w) + " Q" + (L * 0.95) + " " + (-t) + " " + (L - r) + " " + (-t) + " Q" + L + " " + (-t) + " " + L + " " + (-t + r) +
       " L" + L + " " + (t - r) + " Q" + L + " " + t + " " + (L - r) + " " + t + " Q" + (L * 0.95) + " " + t + " 0 " + w + " L" + (-tail) + " " + (w * 0.8) + "Z";
   }
-  function txt(x, y, s, sz, w, fill, extra) {
+  function spTxt(x, y, s, sz, w, fill, extra) {
     return '<text x="' + x + '" y="' + y + '" font-size="' + sz + '" font-weight="' + (w || 700) + '" fill="' + (fill || "#f4f4f0") + '" text-anchor="middle" dominant-baseline="central" ' + (extra || "") + ">" + s + "</text>";
   }
   function bar(cx, cy, rOut, len, ang, w, fill) {
@@ -3325,10 +3334,9 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     o.labels.forEach(function (v) {
       var th = ang(v), str = String(v), nr = o.numR + ((o.numOut && o.numOut[v]) || 0) - (str.length >= 3 ? 7 : 0);
       var p6 = P(0, nr, th), fs = o.numFont - (str.length >= 3 ? 2.5 : 0);
-      s += txt(f2(c + p6[0]), f2(c + p6[1] + 1), str, fs, 600, "#f4f4f0", 'letter-spacing="-.4"');
+      s += spTxt(f2(c + p6[0]), f2(c + p6[1] + 1), str, fs, 600, "#f4f4f0", 'letter-spacing="-.4"');
     });
-    s += '<clipPath id="' + id + 'cl"><circle cx="' + c + '" cy="' + c + '" r="' + (c - 7) + '"/></clipPath><g clip-path="url(#' + id + 'cl)"><rect x="0" y="0" width="' + S + '" height="' + (S * 0.5) + '" fill="url(#' + id + 'hd)"/></g>';
-    s += txt(c, 132, o.name, 10, 500, "#d0d0ca", 'letter-spacing="1.7"') + txt(c, 146, o.unit, 11, 500, "#9a9a92", 'letter-spacing="1.1"');
+    s += spTxt(c, 132, o.name, 10, 500, "#d0d0ca", 'letter-spacing="1.7"') + spTxt(c, 146, o.unit, 11, 500, "#9a9a92", 'letter-spacing="1.1"');
     var rIn = o.rOut - o.lenL, d = needlePath(rIn - 0.05 * c, o.tail, o.needleW);
     s += '<g class="nd" style="transform:translate(' + c + "px," + c + "px) rotate(" + o.a0 + 'deg)">' +
       '<path d="' + d + '" transform="translate(2.5 ' + (o.hubR * 0.12 + 1) + ')" fill="#000" opacity=".6" filter="url(#' + id + 'sh)"/>' +
@@ -3388,12 +3396,32 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     lanesEl.innerHTML = h;
   }
   buildLanes();
+  // re-draw the traces whenever the plot area changes size (screen shown, rotation, layout switch)
+  var waveRaf = 0, lastLaneW = 0;
+  function waveRelayout() {
+    if (waveRaf) return;
+    waveRaf = (window.requestAnimationFrame || setTimeout)(function () {
+      waveRaf = 0;
+      if (!waveVisible() || !frame) return;
+      try { renderWave(); } catch (e) {}
+    });
+  }
+  if (typeof ResizeObserver === "function") {
+    try {
+      new ResizeObserver(function () {
+        var w = lanesEl.getBoundingClientRect().width;
+        if (Math.abs(w - lastLaneW) < 1) return;
+        lastLaneW = w; waveRelayout();
+      }).observe(lanesEl);
+    } catch (e) {}
+  }
   var BRK_SVG = '<svg viewBox="0 0 16 26"><path d="M2 8 L14 4 M2 22 L14 18" stroke="#5e5e57" stroke-width="1.4" fill="none"/><path d="M8 0 V5 M8 21 V26" stroke="#3a3a36" stroke-width="1"/></svg>';
 
   function laneSvg(k, s, fr, showAxis) {
     COL = waveColors();
     var host = $("plot" + k), r = host.getBoundingClientRect();
-    var zf = parseFloat(document.getElementById("app").style.zoom) || 1;   // page scaled to fit (tablet layout on a small screen)
+    var appEl = document.getElementById("app"), zf = (appEl && parseFloat(appEl.style.zoom)) || 1;   // page scaled to fit (tablet layout on a small screen)
+    if (r.width < 2 || r.height < 2) setTimeout(waveRelayout, 120);
     var Wd = Math.max(60, Math.round(r.width / zf)), Ht = Math.max(60, Math.round(r.height / zf));
     var padL = showAxis ? 26 : 2, padR = 4, padT = 6, padB = 16;
     if (narrow()) padL = showAxis ? 22 : 2;
@@ -3492,7 +3520,14 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
     lanesEl.style.display = ""; empty.style.display = "none";
     var fr = frame, nar = narrow();
     for (var k = 0; k < 4; k++) {
-      var s = fr.sparks[k], lane = $("lane" + k), vals = $("vals" + k), plot = $("plot" + k), lh = $("lh" + k);
+      try { renderLane(fr, k, nar); } catch (e) { try { console.error("spark lane " + LBL[k], e); } catch (e2) {} }
+    }
+    renderChips(fr, t);
+  }
+  function renderLane(fr, k, nar) {
+    {
+      var s = fr.sparks && fr.sparks[k], lane = $("lane" + k), vals = $("vals" + k), plot = $("plot" + k), lh = $("lh" + k);
+      if (!lane || !vals || !plot || !lh) return;
       var miss = lane.querySelector(".miss");
       if (!s) {
         vals.innerHTML = vbHtml(LIMITS.peak.label, { st: "na", html: "—" }) + vbHtml(LIMITS.burnV.label, { st: "na", html: "—" }) + vbHtml(LIMITS.dwell.label, { st: "na", html: "—" }) + vbHtml(LIMITS.burnMs.label, { st: "na", html: "—" });
@@ -3501,7 +3536,7 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
         miss.textContent = "No spark (engine slow or stopped)";
         lh.textContent = "";
       } else {
-        if (miss) miss.remove();
+        if (miss) miss.parentNode.removeChild(miss);
         plot.style.display = "";
         vals.innerHTML = vbHtml(LIMITS.peak.label, peakCell(s.peakV, s.peakSat, s.burnValid, s.burnMs)) +
           vbHtml(LIMITS.burnV.label, valCell(s.burnV, s.burnValid, LIMITS.burnV)) +
@@ -3512,9 +3547,11 @@ html[data-layout=phone] #pane-spark .spark-toolbar{gap:6px}
       }
       if (k) {
         var b = $("brk" + k), iv = s && s.intervalUs ? s.intervalUs : null;
-        b.innerHTML = BRK_SVG + (iv ? "<span>" + (iv / 1000).toFixed(1) + " ms</span><span class=\"r\">" + Math.round(30e6 / iv) + " rpm</span>" : "");
+        if (b) b.innerHTML = BRK_SVG + (iv ? "<span>" + (iv / 1000).toFixed(1) + " ms</span><span class=\"r\">" + Math.round(30e6 / iv) + " rpm</span>" : "");
       }
     }
+  }
+  function renderChips(fr, t) {
     var ch = [];
     if (!fr.complete) ch.push('<span class="chip w">Partial capture · ' + fr.nSparks + " of 4 sparks</span>");
     if (fr.flags & W.FLAGS.IRREGULAR) ch.push('<span class="chip w">Uneven spark timing</span>');
