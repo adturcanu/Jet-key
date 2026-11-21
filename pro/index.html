@@ -257,6 +257,23 @@ html[data-layout=phone] #pg-gauges .ggrid{grid-template-rows:repeat(3,minmax(150
 html[data-layout=phone] .strip.demo .dx{display:none}
 html[data-layout=phone] .strip.demo .st-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sat)}
+
+/* big dials: value readout inside the dial (lower centre), zone status in the slim header, dial fills the card */
+.gcard .ph{min-height:26px;font-size:12px}
+.gcard .ph .st{font-size:11px}
+.gcard .pb{padding:2px;gap:0}
+.gcard .face{position:relative;container-type:size}
+.gcard .face svg{display:block;width:100%;height:100%}
+.gcard .ro{position:absolute;left:50%;top:calc(50% + min(100cqw,100cqh)*.335);transform:translate(-50%,-50%);border:0;background:none;padding:0;min-width:0;width:auto;gap:.22em;font-size:calc(min(100cqw,100cqh)*.125);line-height:1;align-items:baseline;pointer-events:none;white-space:nowrap}
+html[data-theme] .gcard .ro b{font-size:1em;line-height:1}
+html[data-theme] .gcard .ro u{font-size:.5em}
+html[data-layout=phone] .gcard .ro{padding:0;width:auto}
+html[data-layout=phone] .gcard .ph{min-height:0;height:17px;padding:0 6px;font-size:10px;letter-spacing:.02em;background:none;border-bottom:0}
+html[data-layout=phone][data-theme=sport] .gcard .ph{font-size:9.5px;letter-spacing:.8px;border-left-width:2px}
+html[data-layout=phone] .gcard .ph .zt{display:none}
+html[data-layout=phone] .gcard .ph .led{width:7px;height:7px}
+html[data-layout=phone] #pg-gauges{padding:4px;gap:4px}
+html[data-layout=phone] #pg-gauges .ggrid{gap:4px;grid-template-rows:repeat(3,minmax(120px,1fr));grid-auto-rows:minmax(120px,1fr)}
 </style></head><body>
 <div id="app">
 <header class="top">
@@ -532,9 +549,9 @@ html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sa
     for (var i = 0; i <= nt; i++) {
       var v = o.min + i * step, maj = i % o.minor === 0, len = maj ? 13 : 6, a = o.A(v), p = pt(r0, a), q = pt(r0 - len, a);
       s.push('<line x1="' + f2(p[0]) + '" y1="' + f2(p[1]) + '" x2="' + f2(q[0]) + '" y2="' + f2(q[1]) + '" stroke="' + C.tick + '" stroke-width="' + (maj ? 1.8 : 1) + '"/>');
-      if (maj && Math.round((v - o.min) / o.major) % o.lab === 0) { var tp = pt(r0 - len - 11.5, a); s.push('<text x="' + f2(tp[0]) + '" y="' + f2(tp[1] + 4.3) + '" font-size="12" text-anchor="middle" fill="' + C.num + '">' + (o.fmt ? o.fmt(v) : +v.toFixed(2)) + "</text>"); }
+      if (maj && Math.round((v - o.min) / o.major) % o.lab === 0) { var tp = pt(r0 - len - 13, a); s.push('<text x="' + f2(tp[0]) + '" y="' + f2(tp[1] + 5) + '" font-size="14.5" font-weight="600" text-anchor="middle" fill="' + C.num + '">' + (o.fmt ? o.fmt(v) : +v.toFixed(2)) + "</text>"); }
     }
-    s.push('<text x="100" y="160" font-size="10.5" text-anchor="middle" fill="' + C.sub + '">' + o.title + "</text>");
+    s.push('<text x="100" y="131" font-size="10.5" text-anchor="middle" fill="' + C.sub + '">' + o.title + "</text>");
     s.push('<g class="nd" style="transform-origin:100px 100px;transform:rotate(' + a0 + 'deg)"><polygon points="85,0 0,-4.4 -18,0 0,4.4" transform="translate(100 100)" fill="' + C.needle + '"/></g>');
     s.push('<circle cx="100" cy="100" r="9" fill="' + C.hub + '"/><circle cx="100" cy="100" r="3" fill="' + C.hub2 + '"/></svg>');
     return s.join("");
@@ -669,7 +686,7 @@ html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sa
       s += '<line x1="' + f2(p[0]) + '" y1="' + f2(p[1]) + '" x2="' + f2(q[0]) + '" y2="' + f2(q[1]) + '" stroke="#f2f4f7" stroke-width="' + (maj ? 3 : 1.2) + '"/>';
       if (maj && Math.round((v - o.min) / o.major) % o.lab === 0) { var tp = P(53, a); s += '<text x="' + f2(tp[0]) + '" y="' + f2(tp[1] + 6) + '" font-size="18" font-weight="700" font-style="italic" text-anchor="middle" fill="#f2f4f7">' + (o.fmt ? o.fmt(v) : +v.toFixed(2)) + "</text>"; }
     }
-    s += '<text x="100" y="146" font-size="11" font-weight="600" text-anchor="middle" fill="#9aa3ad" letter-spacing="1.5">' + o.title.toUpperCase() + "</text>";
+    s += '<text x="100" y="131" font-size="11" font-weight="600" text-anchor="middle" fill="#9aa3ad" letter-spacing="1.5">' + o.title.toUpperCase() + "</text>";
     s += '<g class="nd" style="transform-origin:100px 100px;transform:rotate(' + a0 + 'deg)"><path transform="translate(100 100)" d="M-14 -3 L0 -3.6 L80 -1.2 L84 0 L80 1.2 L0 3.6 L-14 3Z" fill="#ff2d2d"/></g>';
     return s + '<circle cx="100" cy="100" r="11" fill="#22252b" stroke="#ff2d2d" stroke-width="2"/><circle cx="100" cy="100" r="3" fill="#ff2d2d"/></svg>';
   }
@@ -677,8 +694,8 @@ html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sa
   function buildGauges() {
     var C = PAL();
     $("gauges").innerHTML = GAUGES.map(function (o) {
-      return '<div class="panel gcard" id="gc-' + o.id + '"><div class="ph">' + o.h + '<span class="sp"></span><span class="sub">' + o.u + '</span></div><div class="pb"><div class="face">' + (C.w124 ? w124Dial(o) : C.sport ? sportDial(o) : proDial(o, C)) +
-        '</div><div class="ro"><b>—</b><u>' + o.u + '</u><span class="st"><span class="led"></span><span class="zt"></span></span></div></div></div>';
+      return '<div class="panel gcard" id="gc-' + o.id + '"><div class="ph">' + o.h + '<span class="sp"></span><span class="st"><span class="led"></span><span class="zt"></span></span></div><div class="pb"><div class="face">' + (C.w124 ? w124Dial(o) : C.sport ? sportDial(o) : proDial(o, C)) +
+        '<div class="ro"><b>—</b><u>' + o.u + '</u></div></div></div></div>';
     }).join("");
     // battery gauge: secondary thin needle for ignition voltage (KL15) on top of the battery needle
     var th = document.documentElement.getAttribute("data-theme"), c1 = C.w124 ? "#ff8c00" : C.sport ? "#ff2d2d" : C.needle;
@@ -696,10 +713,10 @@ html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sa
       var shape = C.sport ? '<path transform="translate(100 100)" d="M-14 -3 L0 -3.6 L80 -1.2 L84 0 L80 1.2 L0 3.6 L-14 3Z" fill="' + k2 + '" opacity=".9"/>'
         : '<polygon points="85,0 0,-4.4 -18,0 0,4.4" transform="translate(100 100)" fill="' + k2 + '" opacity=".9"/>';
       main2.insertAdjacentHTML("beforebegin", '<g class="nd2" ' + rot0 + '>' + shape + '</g>');
-      var ly = C.sport ? 178 : 176, lc = th === "pro" ? "#5b6472" : "#9aa3ae";
+      var ly = 146, lc = th === "pro" ? "#5b6472" : "#9aa3ae";
       svg.insertAdjacentHTML("beforeend", '<text x="100" y="' + ly + '" font-size="9" font-weight="600" letter-spacing="1" text-anchor="middle" fill="' + lc + '"><tspan fill="' + c1 + '">KL30</tspan>  ·  <tspan fill="' + k2 + '">KL15</tspan></text>');
     }
-    GAUGES.forEach(function (o) { var el = $("gc-" + o.id); o.el = el; o.nd = el.querySelector(".nd"); o.nd2 = el.querySelector(".nd2"); o.lastA2 = null; o.vb = el.querySelector(".ro b"); o.led = el.querySelector(".ro .led"); o.zt = el.querySelector(".zt"); o.lastTxt = null; o.lastA = null; });
+    GAUGES.forEach(function (o) { var el = $("gc-" + o.id); o.el = el; o.nd = el.querySelector(".nd"); o.nd2 = el.querySelector(".nd2"); o.lastA2 = null; o.vb = el.querySelector(".ro b"); o.led = el.querySelector(".ph .led"); o.zt = el.querySelector(".zt"); o.lastTxt = null; o.lastA = null; });
     orderGauges();
   }
   function orderGauges() { var ph = layout() === "phone"; GAUGES.forEach(function (o) { if (o.el) o.el.style.order = ph ? o.ph : o.tab; }); }
