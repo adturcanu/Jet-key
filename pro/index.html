@@ -297,7 +297,6 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
   <button type="button" class="ib rec" id="b-rec" title="Record"><span class="d"></span><span class="l" id="b-rec-l">Record</span></button>
   <button type="button" class="ib" id="b-mark" title="Add marker"><svg viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></svg><span class="l">Marker</span></button>
   <button type="button" class="ib bt" id="b-bt" title="Connection"><svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg><i id="bt-dot"></i></button>
-  <button type="button" class="ib tab-only" id="b-layout" title="Switch to phone layout"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M12 18h.01"/></svg></button>
   <button type="button" class="ib" id="b-set" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </header>
 <div class="strip demo" id="demo-strip"><b class="demo-tag">DEMO</b><span class="st-t">Simulated data<span class="dx">, nothing is connected</span></span><span class="sp"></span><button type="button" class="btn" id="b-exitdemo">Exit demo</button></div>
@@ -342,7 +341,6 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
     <section><h3>Connection</h3><div class="row"><span id="set-conn">Not connected</span><span class="sp"></span><button type="button" class="btn" id="set-connbtn">Connect</button></div></section>
     <section><h3>Appearance</h3>
       <div class="row"><span>Theme</span><span class="sp"></span><span class="seg" id="seg-theme"><button type="button" data-v="pro">Professional</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="retro">Retro</button><button type="button" data-v="sport">Sport</button></span></div>
-      <div class="row"><span>Layout</span><span class="sp"></span><span class="seg" id="seg-layout"><button type="button" data-v="auto">Automatic</button><button type="button" data-v="phone">Phone</button><button type="button" data-v="tablet">Tablet / desktop</button></span></div>
     </section>
     <section><h3>Recordings <span class="sub" id="ses-info"></span></h3>
       <p class="hint">Start a recording with the Record button at the top. Play a recording back through the gauges, charts and values, or save it as a CSV file.</p>
@@ -1320,7 +1318,6 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
     Array.prototype.forEach.call(document.querySelectorAll(".js-connect"), function (el) { el.disabled = connBusy; });
     var rb = $("b-rec"); rb.classList.toggle("recon", REC.on); rb.title = REC.on ? "Stop recording" : "Start recording";
     recLabel();
-    var lb = $("b-layout"); lb.title = "Switch to phone layout";
     syncSettingsUi(); syncPbUi();
     void live;
   }
@@ -1329,10 +1326,9 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
     setTxt($("b-rec-l"), REC.on ? (layout() === "phone" ? s : "Stop · " + s) : "Record");
   }
   function syncSettingsUi() {
-    var st = $("seg-theme"), sl = $("seg-layout");
+    var st = $("seg-theme");
     if (!st) return;
     Array.prototype.forEach.call(st.children, function (b) { b.classList.toggle("on", b.getAttribute("data-v") === THEME); });
-    Array.prototype.forEach.call(sl.children, function (b) { b.classList.toggle("on", b.getAttribute("data-v") === LAYOUT_MODE); });
     setTxt($("set-conn"), LINK === "demo" ? "Demo running (simulated data)" : connected() ? "Connected to " + (device && device.name || "JetronicReader") : lost ? "Connection lost, reconnecting…" : "Not connected");
     setTxt($("set-connbtn"), LINK === "demo" ? "Exit demo" : LINK === "ble" ? "Disconnect" : "Connect");
   }
@@ -1793,7 +1789,7 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
 
   /* ---------- wiring ---------- */
   function init() {
-    try { var lm = params.get("layout") || localStorage.getItem(LAYOUT_KEY); if (["auto", "phone", "tablet"].indexOf(lm) >= 0) LAYOUT_MODE = lm; } catch (e) {}
+    LAYOUT_MODE = "auto"; try { localStorage.removeItem(LAYOUT_KEY); } catch (e) {}
     buildGauges(); buildLegends(); buildMv(); buildSpark(); buildCodes();
     applyLayout();
     var hp = location.hash.replace("#", ""), hi = PAGES.map(function (p) { return p[0]; }).indexOf(hp);
@@ -1812,13 +1808,11 @@ html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolu
     $("b-rec").addEventListener("click", function () { if (REC.on) recStop(); else recStart(); });
     $("b-mark").addEventListener("click", recMarker);
     $("b-bt").addEventListener("click", function () { if (LINK === "off" && !PB) connect(); else openSettings(); });
-    $("b-layout").addEventListener("click", function () { setLayoutMode("phone", true); });
     $("b-set").addEventListener("click", openSettings);
     $("set-x").addEventListener("click", closeSettings);
     $("set-bg").addEventListener("click", closeSettings);
     $("set-connbtn").addEventListener("click", function () { if (LINK === "demo") exitDemo(); else if (LINK === "ble") disconnect(); else { closeSettings(); connect(); } });
     $("seg-theme").addEventListener("click", function (e) { var b = e.target.closest("button[data-v]"); if (b) setTheme(b.getAttribute("data-v"), true); });
-    $("seg-layout").addEventListener("click", function (e) { var b = e.target.closest("button[data-v]"); if (b) setLayoutMode(b.getAttribute("data-v"), true); });
     $("ses-list").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-a]"); if (!b) return;
       var id = +b.closest(".ses").getAttribute("data-id"), a = b.getAttribute("data-a");
