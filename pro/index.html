@@ -274,6 +274,16 @@ html[data-layout=phone] .gcard .ph .zt{display:none}
 html[data-layout=phone] .gcard .ph .led{width:7px;height:7px}
 html[data-layout=phone] #pg-gauges{padding:4px;gap:4px}
 html[data-layout=phone] #pg-gauges .ggrid{gap:4px;grid-template-rows:repeat(3,minmax(120px,1fr));grid-auto-rows:minmax(120px,1fr)}
+
+/* measured values on phone: dot-only status column, tap a row for the text; compact cells so the table fits 360 px */
+html[data-layout=phone] table.grid{font-size:12px}
+html[data-layout=phone] table.grid th,html[data-layout=phone] table.grid td{padding-left:4px;padding-right:4px}
+html[data-layout=phone] table.grid td:first-child{white-space:normal;line-height:1.2}
+html[data-layout=phone] table.grid .sc{width:18px;text-align:center;position:relative;padding-left:2px;padding-right:6px}
+html[data-layout=phone] table.grid th.sc .lbl{display:none}
+html[data-layout=phone] table.grid .sc .zt{display:none}
+html[data-layout=phone] table.grid tr[data-k]{cursor:pointer}
+html[data-layout=phone] table.grid tr.open .sc .zt{display:block;position:absolute;right:calc(100% - 2px);top:50%;transform:translateY(-50%);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-size:12px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:3}
 </style></head><body>
 <div id="app">
 <header class="top">
@@ -1507,12 +1517,23 @@ html[data-layout=phone] #pg-gauges .ggrid{gap:4px;grid-template-rows:repeat(3,mi
     ["grp", "Supply"], ["k30", "Battery (KL30)", "V", 2], ["k15", "Ignition (KL15)", "V", 2],
     ["grp", "Spark"], ["bv", "Burn voltage", "V", 1], ["bms", "Burn time", "ms", 2], ["dw", "Dwell time", "ms", 1], ["pk", "Spark peak", "V", 0], ["cnt", "Sparks counted", "", 0]];
   function buildMv() {
-    var h = '<tr><th>Value</th><th class="n">Current</th><th></th><th class="n">Min</th><th class="n">Max</th><th>Status</th></tr>';
+    var h = '<tr><th>Value</th><th class="n">Current</th><th></th><th class="n">Min</th><th class="n">Max</th><th class="sc"><span class="lbl">Status</span></th></tr>';
     MV.forEach(function (r) {
       if (r[0] === "grp") { h += '<tr class="grp"><td colspan="6">' + r[1] + "</td></tr>"; return; }
-      h += '<tr data-k="' + r[0] + '"><td>' + r[1] + '</td><td class="n"><b>—</b></td><td class="u">' + r[2] + '</td><td class="n mn"></td><td class="n mx"></td><td><span class="st"><span class="led"></span><span class="zt"></span></span></td></tr>';
+      h += '<tr data-k="' + r[0] + '"><td>' + r[1] + '</td><td class="n"><b>—</b></td><td class="u">' + r[2] + '</td><td class="n mn"></td><td class="n mx"></td><td class="sc"><span class="st"><span class="led"></span><span class="zt"></span></span></td></tr>';
     });
     $("mv").innerHTML = h;
+    if (!$("mv")._tap) {
+      // phone: the status column shows only the dot; tapping a row shows its status text for a few seconds
+      $("mv")._tap = true;
+      var openTr = null, openT = 0;
+      $("mv").addEventListener("click", function (e) {
+        var tr = e.target.closest && e.target.closest("tr[data-k]");
+        if (openTr) { openTr.classList.remove("open"); clearTimeout(openT); }
+        if (!tr || tr === openTr || !tr.querySelector(".zt").textContent) { openTr = null; return; }
+        openTr = tr; tr.classList.add("open"); openT = setTimeout(function () { tr.classList.remove("open"); if (openTr === tr) openTr = null; }, 3000);
+      });
+    }
     MV.forEach(function (r) { if (r[0] === "grp") return; var tr = $("mv").querySelector('tr[data-k="' + r[0] + '"]'); r.cur = tr.querySelector("b"); r.mn = tr.querySelector(".mn"); r.mx = tr.querySelector(".mx"); r.led = tr.querySelector(".led"); r.zt = tr.querySelector(".zt"); });
   }
   function pbMinMax(V) {
