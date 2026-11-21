@@ -243,6 +243,7 @@ html[data-layout=phone] .cd .xx{display:none}
 
 .ph .sub .lg{display:inline-flex;align-items:center;gap:4px;margin-right:4px;letter-spacing:.06em}.ph .sub .lg i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-left:6px}
 section:focus,section:focus-visible,div:focus,div:focus-visible{outline:none}
+.pager *:not(input){touch-action:pan-y}.pager{overscroll-behavior-x:none}.page,.ggrid,.mv-body,.cd-col,.cd-side{overscroll-behavior-x:none}.pager canvas,.pager svg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 </style></head><body>
 <div id="app">
 <header class="top">
@@ -1310,36 +1311,72 @@ section:focus,section:focus-visible,div:focus,div:focus-visible{outline:none}
     forceRender();
   }
   function initSwipe() {
-    var pager = $("pager"), tr = $("track"), pd = null, justDragged = false;
-    pager.addEventListener("pointerdown", function (e) {
-      if (e.button > 0 || e.target.closest("input,select,textarea")) return;
-      pd = { id: e.pointerId, x: e.clientX, y: e.clientY, drag: false, w: pager.clientWidth || 1, dx: 0 };
-    });
-    pager.addEventListener("pointermove", function (e) {
-      if (!pd || e.pointerId !== pd.id) return;
-      var dx = e.clientX - pd.x, dy = e.clientY - pd.y;
-      if (!pd.drag) {
-        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) { pd.drag = true; tr.classList.remove("anim"); pager.classList.add("dragging"); try { pager.setPointerCapture(e.pointerId); } catch (x) {} }
-        else if (Math.abs(dy) > 12) { pd = null; return; }
-        else return;
+    // Touch: Touch Events (non-passive) so a locked horizontal swipe can't be stolen by a vertical scroller
+    // (with Pointer Events Chrome/Android fires pointercancel as soon as it claims the gesture -> snap back).
+    // Mouse/pen: Pointer Events with capture. Axis locks after ~10 px; commit on >22% width or a quick flick.
+    var pager = $("pager"), tr = $("track"), g = null, justDragged = false, LOCK = 10;
+    function curX() { var m = getComputedStyle(tr).transform; if (!m || m === "none") return -PAGE * (pager.clientWidth || 1); var v = m.match(/matrix\(([^)]+)\)/); return v ? parseFloat(v[1].split(",")[4]) || 0 : -PAGE * (pager.clientWidth || 1); }
+    function start(x, y, t) {
+      var w = pager.clientWidth || 1, base = -PAGE * w;
+      if (tr.classList.contains("anim")) { base = curX(); tr.classList.remove("anim"); tr.style.transform = "translateX(" + base + "px)"; }
+      g = { x: x, y: y, w: w, base: base, axis: null, dx: 0, hist: [[t, x]] };
+    }
+    function move(x, y, t) {
+      if (!g) return false;
+      var dx = x - g.x, dy = y - g.y;
+      if (!g.axis) {
+        if (Math.abs(dx) < LOCK && Math.abs(dy) < LOCK) return false;
+        g.axis = Math.abs(dx) > Math.abs(dy) * 0.9 ? "x" : "y";
+        if (g.axis === "y") { if (g.base !== -PAGE * g.w) goPage(PAGE, true); g = null; return false; }
+        pager.classList.add("dragging");
       }
-      if ((PAGE === 0 && dx > 0) || (PAGE === 3 && dx < 0)) dx *= 0.3;
-      pd.dx = dx;
-      tr.style.transform = "translateX(" + (-PAGE * pd.w + dx) + "px)";
-      e.preventDefault();
-    });
-    function end(e, cancel) {
-      if (!pd || e.pointerId !== pd.id) return;
-      var p = pd; pd = null; pager.classList.remove("dragging");
-      if (!p.drag) return;
-      justDragged = true; setTimeout(function () { justDragged = false; }, 0);
+      var off = g.base + PAGE * g.w + dx;
+      if ((PAGE === 0 && off > 0) || (PAGE === 3 && off < 0)) off *= 0.3;
+      g.dx = off;
+      tr.style.transform = "translateX(" + (-PAGE * g.w + off) + "px)";
+      g.hist.push([t, x]); if (g.hist.length > 6) g.hist.shift();
+      return true;
+    }
+    function end(t, x) {
+      if (!g) return;
+      var p = g; g = null; pager.classList.remove("dragging");
+      if (p.axis !== "x") { if (p.base !== -PAGE * p.w) goPage(PAGE, true); return; }
+      justDragged = true; setTimeout(function () { justDragged = false; }, 50);
+      var h0 = p.hist[0], h1 = p.hist[p.hist.length - 1], dt = Math.max(1, h1[0] - h0[0]), v = (h1[1] - h0[1]) / dt; // px/ms
+      if (t - h1[0] > 120) v = 0;  // finger stopped before lifting: no flick
       var n = PAGE;
-      if (!cancel && p.dx < -p.w * 0.18) n++; else if (!cancel && p.dx > p.w * 0.18) n--;
+      if (p.dx < -p.w * 0.22 || (v < -0.35 && p.dx < -20)) n++;
+      else if (p.dx > p.w * 0.22 || (v > 0.35 && p.dx > 20)) n--;
       goPage(n, true);
     }
-    pager.addEventListener("pointerup", function (e) { end(e, false); });
-    pager.addEventListener("pointercancel", function (e) { end(e, true); });
+    function skip(t) { return t && t.closest && t.closest("input,select,textarea,.sheet"); }
+    pager.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1 || skip(e.target)) { if (g) end(e.timeStamp); return; }
+      var q = e.touches[0]; start(q.clientX, q.clientY, e.timeStamp);
+    }, { passive: true });
+    pager.addEventListener("touchmove", function (e) {
+      if (!g) return;
+      if (e.touches.length !== 1) { end(e.timeStamp); return; }
+      var q = e.touches[0];
+      if (move(q.clientX, q.clientY, e.timeStamp) && e.cancelable) e.preventDefault();
+    }, { passive: false });
+    pager.addEventListener("touchend", function (e) { end(e.timeStamp); }, { passive: true });
+    pager.addEventListener("touchcancel", function (e) { end(e.timeStamp); }, { passive: true });
+    var pid = null;
+    pager.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "touch" || e.button > 0 || skip(e.target)) return;
+      pid = e.pointerId; start(e.clientX, e.clientY, e.timeStamp);
+    });
+    pager.addEventListener("pointermove", function (e) {
+      if (e.pointerId !== pid || !g) return;
+      var was = g.axis;
+      if (move(e.clientX, e.clientY, e.timeStamp)) { if (!was) { try { pager.setPointerCapture(pid); } catch (x) {} } e.preventDefault(); }
+    });
+    function pend(e) { if (e.pointerId !== pid) return; pid = null; end(e.timeStamp); }
+    pager.addEventListener("pointerup", pend);
+    pager.addEventListener("pointercancel", pend);
     pager.addEventListener("click", function (e) { if (justDragged) { e.stopPropagation(); e.preventDefault(); } }, true);
+    pager.addEventListener("dragstart", function (e) { e.preventDefault(); });
     document.addEventListener("keydown", function (e) {
       if (e.target.closest && e.target.closest("input,select,textarea") || !$("settings").hidden) return;
       if (e.key === "ArrowRight") goPage(PAGE + 1, true); else if (e.key === "ArrowLeft") goPage(PAGE - 1, true);
