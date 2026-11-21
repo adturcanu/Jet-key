@@ -244,6 +244,10 @@ html[data-layout=phone] .cd .xx{display:none}
 .ph .sub .lg{display:inline-flex;align-items:center;gap:4px;margin-right:4px;letter-spacing:.06em}.ph .sub .lg i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-left:6px}
 section:focus,section:focus-visible,div:focus,div:focus-visible{outline:none}
 .pager *:not(input){touch-action:pan-y}.pager{overscroll-behavior-x:none}.page,.ggrid,.mv-body,.cd-col,.cd-side{overscroll-behavior-x:none}.pager canvas,.pager svg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* phone: 6 gauges (3 x 2) that fit without scrolling; ignition voltage and dwell only on tablet */
+html[data-layout=phone] #gc-k15,html[data-layout=phone] #gc-dw{display:none}
+html[data-layout=phone] #pg-gauges .ggrid{grid-template-rows:repeat(3,minmax(150px,1fr));grid-auto-rows:minmax(150px,1fr);align-content:stretch}
 </style></head><body>
 <div id="app">
 <header class="top">
@@ -482,13 +486,13 @@ section:focus,section:focus-visible,div:focus,div:focus-visible{outline:none}
   /* ---------- the 8 gauges (green = where the value should be) ---------- */
   var GAUGES = [
     { id: "rpm", h: "Engine speed", u: "rpm", min: 0, max: 7000, major: 1000, minor: 5, lab: 1, fmt: function (v) { return v / 1000; }, title: "rpm × 1000", d: 0, z: [[600, 6000, "ok"], [6000, 7000, "bad"]], tab: 0, ph: 0 },
-    { id: "duty", h: "Duty cycle", u: "%", min: 0, max: 100, major: 10, minor: 5, lab: 2, title: "%", d: 1, z: [[0, 10, "warn"], [20, 80, "ok"], [90, 100, "warn"]], tab: 1, ph: 4 },
+    { id: "duty", h: "Duty cycle", u: "%", min: 0, max: 100, major: 10, minor: 5, lab: 2, title: "%", d: 1, z: [[0, 10, "warn"], [20, 80, "ok"], [90, 100, "warn"]], tab: 1, ph: 3 },
     { id: "adv", h: "Ignition advance", u: "°", min: 0, max: 50, major: 5, minor: 5, lab: 2, title: "degrees", d: 1, z: [[5, 40, "ok"]], tab: 4, ph: 1 },
     { id: "k30", h: "Battery voltage", u: "V", min: 8, max: 16, major: 1, minor: 5, lab: 1, title: "volts", d: 2, z: [[8, 11, "bad"], [11, 11.5, "warn"], [11.5, 14.8, "ok"], [14.8, 15.4, "warn"], [15.4, 16, "bad"]], tab: 3, ph: 2 },
-    { id: "k15", h: "Ignition voltage", u: "V", min: 8, max: 16, major: 1, minor: 5, lab: 1, title: "volts", d: 2, z: [[8, 11, "bad"], [11, 11.5, "warn"], [11.5, 14.8, "ok"], [14.8, 15.4, "warn"], [15.4, 16, "bad"]], tab: 7, ph: 3 },
-    { id: "bv", h: "Burn voltage", u: "V", min: 0, max: 80, major: 10, minor: 5, lab: 2, title: "volts", d: 1, z: [[0, 20, "bad"], [20, 25, "warn"], [25, 45, "ok"], [45, 60, "warn"], [60, 80, "bad"]], tab: 5, ph: 6 },
-    { id: "bms", h: "Burn time", u: "ms", min: 0, max: 4, major: 0.5, minor: 5, lab: 2, title: "ms", d: 2, z: [[0, 0.7, "bad"], [0.7, 1, "warn"], [1, 2.6, "ok"], [2.6, 3, "warn"], [3, 4, "bad"]], tab: 6, ph: 7 },
-    { id: "dw", h: "Dwell time", u: "ms", min: 0, max: 12, major: 1, minor: 4, lab: 2, title: "ms", d: 1, z: [[0, 2.5, "bad"], [2.5, 3, "warn"], [3, 8.5, "ok"], [8.5, 9.5, "warn"], [9.5, 12, "bad"]], tab: 2, ph: 5 }
+    { id: "k15", h: "Ignition voltage", u: "V", min: 8, max: 16, major: 1, minor: 5, lab: 1, title: "volts", d: 2, z: [[8, 11, "bad"], [11, 11.5, "warn"], [11.5, 14.8, "ok"], [14.8, 15.4, "warn"], [15.4, 16, "bad"]], tab: 7, ph: 6 },
+    { id: "bv", h: "Burn voltage", u: "V", min: 0, max: 80, major: 10, minor: 5, lab: 2, title: "volts", d: 1, z: [[0, 20, "bad"], [20, 25, "warn"], [25, 45, "ok"], [45, 60, "warn"], [60, 80, "bad"]], tab: 5, ph: 4 },
+    { id: "bms", h: "Burn time", u: "ms", min: 0, max: 4, major: 0.5, minor: 5, lab: 2, title: "ms", d: 2, z: [[0, 0.7, "bad"], [0.7, 1, "warn"], [1, 2.6, "ok"], [2.6, 3, "warn"], [3, 4, "bad"]], tab: 6, ph: 5 },
+    { id: "dw", h: "Dwell time", u: "ms", min: 0, max: 12, major: 1, minor: 4, lab: 2, title: "ms", d: 1, z: [[0, 2.5, "bad"], [2.5, 3, "warn"], [3, 8.5, "ok"], [8.5, 9.5, "warn"], [9.5, 12, "bad"]], tab: 2, ph: 7 }
   ];
   var GBY = {}; GAUGES.forEach(function (g) { GBY[g.id] = g; });
   // spark limits (same as the spark screens): green = normal, yellow = slightly out, else red
