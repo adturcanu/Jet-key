@@ -248,6 +248,15 @@ section:focus,section:focus-visible,div:focus,div:focus-visible{outline:none}
 /* phone: 6 gauges (3 x 2) that fit without scrolling; ignition voltage and dwell only on tablet */
 html[data-layout=phone] #gc-k15,html[data-layout=phone] #gc-dw{display:none}
 html[data-layout=phone] #pg-gauges .ggrid{grid-template-rows:repeat(3,minmax(150px,1fr));grid-auto-rows:minmax(150px,1fr);align-content:stretch}
+/* safe areas (Android edge-to-edge app shell, notches): title bar colour runs under the status bar, page nav clears the system nav bar */
+:root{--sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));--sal:max(env(safe-area-inset-left,0px),var(--safe-area-inset-left,0px));--sar:max(env(safe-area-inset-right,0px),var(--safe-area-inset-right,0px))}
+#app{padding-left:var(--sal);padding-right:var(--sar)}
+.top{height:calc(48px + var(--sat));padding-top:var(--sat)}
+.dots{height:calc(28px + var(--sab));padding-bottom:var(--sab)}
+.sheet{padding-top:var(--sat);padding-bottom:var(--sab);padding-right:var(--sar)}
+html[data-layout=phone] .strip.demo .dx{display:none}
+html[data-layout=phone] .strip.demo .st-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+html[data-layout=phone] .top{height:calc(52px + var(--sat));padding-top:var(--sat)}
 </style></head><body>
 <div id="app">
 <header class="top">
@@ -264,7 +273,7 @@ html[data-layout=phone] #pg-gauges .ggrid{grid-template-rows:repeat(3,minmax(150
   <button type="button" class="ib tab-only" id="b-layout" title="Switch to phone layout"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M12 18h.01"/></svg></button>
   <button type="button" class="ib" id="b-set" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </header>
-<div class="strip demo" id="demo-strip"><b class="demo-tag">DEMO</b><span class="st-t">Simulated data, nothing is connected</span><span class="sp"></span><button type="button" class="btn" id="b-exitdemo">Exit demo</button></div>
+<div class="strip demo" id="demo-strip"><b class="demo-tag">DEMO</b><span class="st-t">Simulated data<span class="dx">, nothing is connected</span></span><span class="sp"></span><button type="button" class="btn" id="b-exitdemo">Exit demo</button></div>
 <div class="strip start" id="start-strip"><button type="button" class="btn primary js-connect"><svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg><span class="js-connect-l">Connect</span></button><button type="button" class="btn js-demo">Try demo</button></div>
 <div class="strip pb" id="pb-strip">
   <b class="demo-tag pbt">PLAYBACK</b>
